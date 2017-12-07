@@ -19,27 +19,44 @@ def rainbow():
     print('Running the rainbow lights!')
     #add zigbee serial commands
     ser.write("r")
+    data = ser.read()
+    print(data)
     return '', 204
 
 @app.route('/mood/', endpoint='mood')
-def rainbow():
+def mood():
     print('Running the mood lights!')
     #add zigbee serial commands
-    ser.write("r")
+    ser.write("m")
+    data = ser.read()
+    print(data)
     return '', 204
 
 @app.route('/candle/', endpoint='candle')
-def rainbow():
+def candle():
     print('Running the candle lights!')
     #add zigbee serial commands
-    ser.write("r")
+    ser.write("c")
+    data = ser.read()
+    print(data)
     return '', 204
 
 @app.route('/warmwhite/', endpoint='warmwhite')
-def rainbow():
+def warmwhite():
     print('Running the warm white lights!')
     #add zigbee serial commands
-    ser.write("r")
+    ser.write("w")
+    data = ser.read()
+    print(data)
+    return '', 204
+
+@app.route('/wave/', endpoint='wave')
+def wave():
+    print('Running the wave lights!')
+    #add zigbee serial commands
+    ser.write("b")
+    data = ser.read()
+    print(data)
     return '', 204
 
 if __name__ == '__main__':
