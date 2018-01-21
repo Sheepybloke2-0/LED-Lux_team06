@@ -1,15 +1,28 @@
+import serial
+import threading
+import atexit
 from flask import Flask, render_template
 from xbee import XBee
-import serial
 
-#Assume that it attaches to USB0. Adjust as nessary by plugging in module and in terminal type dmesg
+#Global variable that both threads can access
+lightMode = ""
+
+#Treat lightMode as a mutex to ensure each thread has exclusive access to the variable
+datalock = threading.Lock()
+#Thread data struct
+serialThread = threading.Thread()
+RUN_TIME = 1 #seconds
+
+#Assume that it attaches to USB1. Adjust as nessary by plugging in module and in terminal type dmesg
 PORT = "/dev/ttyUSB0"
 BAUDRATE = 9600
 
+#Init the Zigbee serial modules
 ser = serial.Serial(PORT, BAUDRATE)
 xbee = XBee(ser)
-app = Flask(__name__)
 
+app = Flask(__name__)
+#App functions
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -17,49 +30,57 @@ def index():
 @app.route('/rainbow/', endpoint='rainbow')
 def rainbow():
     print('Running the rainbow lights!')
-    #add zigbee serial commands
-    ser.write("r")
-    data = ser.read()
-    print(data)
+    send_mode_change("r")
     return '', 204
 
 @app.route('/mood/', endpoint='mood')
 def mood():
     print('Running the mood lights!')
     #add zigbee serial commands
-    ser.write("m")
-    data = ser.read()
-    print(data)
+    send_mode_change("m")
     return '', 204
 
 @app.route('/candle/', endpoint='candle')
 def candle():
     print('Running the candle lights!')
     #add zigbee serial commands
-    ser.write("c")
-    data = ser.read()
-    print(data)
+    send_mode_change("c")
     return '', 204
 
 @app.route('/warmwhite/', endpoint='warmwhite')
 def warmwhite():
     print('Running the warm white lights!')
     #add zigbee serial commands
-    ser.write("w")
-    data = ser.read()
-    print(data)
+    send_mode_change("w")
     return '', 204
 
 @app.route('/wave/', endpoint='wave')
 def wave():
     print('Running the wave lights!')
     #add zigbee serial commands
-    ser.write("b")
-    data = ser.read()
-    print(data)
+    send_mode_change("b")
     return '', 204
 
+#Starter and shutdown functions
+def interrupt():
+    global serialThread
+    serialThread.cancel()
+
+def send_mode_change( mode ):
+    global serialThread
+    global lightMode
+    #lock the mutex for editting
+    with datalock:
+        lightMode = mode
+    #start thread and run it for 5 seconds. Hopefully this is enough times
+    serialThread = threading.Timer(RUN_TIME, serial_send, lightMode)
+    serialThread.start()
+
+def serial_send( lightMode ):
+    ser.write(lightMode)
+
 if __name__ == '__main__':
+
     #init zigbee module
     ser.open()
-    app.run()
+    app = create_app()

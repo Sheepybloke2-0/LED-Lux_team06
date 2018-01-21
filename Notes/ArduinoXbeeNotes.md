@@ -29,7 +29,7 @@ void loop() {
 To flash the arduino, disconnect TX and RX (0,1), since they confilct with the serial cable.
 Then connect individually to the power supply and it works.
 
-Current configs: Comes from [[https://alselectro.wordpress.com/2017/01/23/zigbee-xbee-s2c-how-to-configure-as-coordinator-router-end-device/|here]]
+Current configs: Comes from [here](https://alselectro.wordpress.com/2017/01/23/zigbee-xbee-s2c-how-to-configure-as-coordinator-router-end-device/)
 ```
 NODE 1:
 PanID 12
@@ -39,6 +39,8 @@ DL: FFFF
 
 NODE 2:
 PanID: 12
+DH: 0
+DL: 0
 Coordinator: Disabled[0]
 Channel Verification: Enabled[1]
 ```
@@ -136,3 +138,23 @@ onboard serial. Once flashed, connect to an external power supply and it should 
 
 Found out that the NeoPixel doesn't have a dim command. The setBrightness command
 should only be used once on initialization to limit current, not change brightness. :(
+
+#####Web app dependencies
+We need pyserial, flask, xbee. All can be installed using `pip3 install`
+For the Pi, the python used by flask is Python3, so we need to convert everything to that.
+For example, we need to encode the strings send over serial, since Python3 uses unicode.
+EX: `ser.write('My string'.encode())`
+
+To run the web app, first export the python app
+`export FLASK_APP=app.py`
+then run the flask commands
+`flask run`
+This will launch the server.
+
+#1-21-18
+One issue with the old system was that only one of the ZigBees were getting the
+signal and so it was the only one changing. To fix this, we decided to add to the
+python programmer a function that launched a second non-blocking thread to handle
+the serial sending. Structure: Button press -> send char indicating mode ->
+set variable and launch thread -> send out serial calls for n seconds until All
+Zigbees are changed.
