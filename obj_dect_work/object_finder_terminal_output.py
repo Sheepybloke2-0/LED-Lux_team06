@@ -36,6 +36,9 @@ PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
 # Coco classes that need to be mapped to categories
 NUM_CLASSES = 90
 
+# Count the number of people
+num_people = 0
+
 # Label maps connect the classes to the categories names
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
@@ -71,14 +74,9 @@ class WebcamVideoStream:
     def stop(self):
         self.stopped = True
 
-# Load Graph into memory
-# TODO: is this needed? yes, but not here
-
-
-
-
 # ------------- Functions -----------------------------------
 def detect_objects(image, graph, sess):
+    global num_people
     # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
     image_np_expanded = np.expand_dims(image, axis=0)
     image_tensor = graph.get_tensor_by_name('image_tensor:0')
@@ -108,6 +106,16 @@ def detect_objects(image, graph, sess):
         use_normalized_coordinates=True,
         line_thickness=4)
 
+    classes_index = np.nditer(classes, flags=['f_index'])
+    for i in classes_index:
+        current_index = classes_index.index
+        if scores[0][current_index] > 0.50:
+            obj_id = int(i)
+            # or use categories_index
+            for dicts in categories:
+                if dicts['id'] == obj_id:
+                    name = dicts['name']
+                    print(name)
     return image
 
 def worker_node(input_frame_q, output_frame_q):
@@ -137,11 +145,11 @@ if __name__ == '__main__':
     logger.setLevel(multiprocessing.SUBDEBUG)
 
     # Set queue sizes
-    input_frame_q = Queue(maxsize=50)
-    output_frame_q = Queue(maxsize=50)
+    input_frame_q = Queue(maxsize=5)
+    output_frame_q = Queue(maxsize=5)
 
     # Set the Pool size and number of workers
-    pool = Pool(10, worker_node, (input_frame_q, output_frame_q))
+    pool = Pool(2, worker_node, (input_frame_q, output_frame_q))
 
     # Start the Webcam
     webcam = WebcamVideoStream(src=0).start()
