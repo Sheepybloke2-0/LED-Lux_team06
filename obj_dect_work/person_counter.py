@@ -52,6 +52,9 @@ class WebcamVideoStream:
     def __init__(self, src=0):
     # Send in video source to start and grab initial frame
         self.stream = cv2.VideoCapture(src)
+        # Assume that the camera is 1080
+        self.stream.set(3, 1280)
+        self.stream.set(4, 720)
         (self.isGrabbed, self.frame) = self.stream.read()
 
         # Variable to indicate if thread should be stopped
@@ -144,49 +147,54 @@ if __name__ == '__main__':
     logger.setLevel(multiprocessing.SUBDEBUG)
 
     # Set queue sizes
-    input_frame_q = Queue(maxsize=5)
+    input_frame_q = Queue(maxsize=5 )
     output_frame_q = Queue(maxsize=5)
     output_dict_q = Queue(maxsize=5)
 
     # Set the Pool size and number of workers
-    pool = Pool(2, worker_node, (input_frame_q, output_frame_q, output_dict_q))
+    pool = Pool(2 , worker_node, (input_frame_q, output_frame_q, output_dict_q))
 
     # Start the Webcam
     webcam = WebcamVideoStream(src=0).start()
     # Start the tensorflow session
     while(1):
-      err, img = webcam.getFrame()
-      if err == True:
-          input_frame_q.put(img)
+        err, img = webcam.getFrame()
+        if err == True:
+            input_frame_q.put(img)
 
-          # Retreive the dicts and break out the useful ones
-          out_dict = output_dict_q.get()
-          classes = out_dict['classes']
-          scores = out_dict['scores']
+            # Retreive the dicts and break out the useful ones
+            out_dict = output_dict_q.get()
+            classes = out_dict['classes']
+            scores = out_dict['scores']
 
-          # Break open the NP array so that we can compare the objects to their scores
-          classes_index = np.nditer(classes, flags=['f_index'])
-          for i in classes_index:
-            current_index = classes_index.index
-            # There's almost always a 1, just very low probablility. Ensure i is greater than 50%
-            if scores[0][current_index] > 0.50:
-                if i == 1:
-                    if person_in_frame != True:
-                        num_people += 1
-                        person_in_frame = True
-                        print(num_people)
-                else:
-                    person_in_frame = False
+            # Break open the NP array so that we can compare the objects to their scores
+            classes_index = np.nditer(classes, flags=['f_index'])
+            found_obj = []
+            for id in classes_index:
+                current_index = classes_index.index
+                # There's almost always a 1, just very low probablility. Ensure i is greater than 50%
+                if scores[0][current_index] > 0.50:
+                    # Add all found objects to a List
+                    found_obj.append(id)
 
-          img_brg   = cv2.cvtColor(output_frame_q.get(), cv2.COLOR_RGB2BGR)
-          cv2.imshow("img", img_brg)
-      else:
-          print("Check if the camera is connected to the system!")
-          break
+            # If a person was found and they weren't there before, add 1
+            if 1 in found_obj:
+                if person_in_frame != True:
+                    num_people += 1
+                    person_in_frame = True
+                    print(num_people)
+            else:
+                person_in_frame = False
 
-      k = cv2.waitKey(60) & 0xFF
-      if k == 27:
-         break
+            img_brg   = cv2.cvtColor(output_frame_q.get(), cv2.COLOR_RGB2BGR)
+            cv2.imshow("img", img_brg)
+        else:
+            print("Check if the camera is connected to the system!")
+            break
+
+        k = cv2.waitKey(60) & 0xFF
+        if k == 27:
+            break
 
     cv2.destroyAllWindows()
     webcam.stop()
