@@ -51,10 +51,6 @@ TIME_OUT = 25
 person_in_frame = False
 lights = True
 
-# ROI Constants
-FWD = 0
-BAK = 1
-
 # Label maps connect the classes to the categories names
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
@@ -194,9 +190,7 @@ if __name__ == '__main__':
     old_mid_x = [0]
     old_mid_y = [0]
     old_area = [0]
-    # Assume
-    direction = [[ FWD, FWD, FWD, FWD, FWD]]
-
+    font = cv2.FONT_HERSHEY_SIMPLEX
 
     # Start the tensorflow session
     while(1):
@@ -252,11 +246,8 @@ if __name__ == '__main__':
             mid_diff_x = []
             mid_diff_y = []
             diff_area = []
-            # Forward = 0,0; backward = 0,1; left = 1,0; right = 1,1; respectively
-            cur_dir = [0, 0]
             array_idx = 0
             for box_idx in person_idx:
-                # TODO: Break into a function and multiplex?
                 bounding_box = []
                 bounding_box.append(boxes[0][box_idx][0] * HEIGHT)
                 bounding_box.append(boxes[0][box_idx][1] * WIDTH)
@@ -306,50 +297,15 @@ if __name__ == '__main__':
                 # If positive and box area is shrinking, means (often) moving back into the distance
                 if mid_diff_y[array_idx] > 0 and diff_area[array_idx] > 0:
                     if mid_diff_x[array_idx] > 0:
-                        # Backward Left
-                        cur_dir[0] = 1
-                        cur_dir[1] = 1
+                        print(str(array_idx) + ' Backwards and Right')
                     elif mid_diff_x[array_idx] < 0:
-                        # Backward Right
-                        cur_dir[0] = 1
-                        cur_dir[1] = 0
+                        print(str(array_idx) + ' Backwards and left')
                 # If negative and area is increasing, means (often) moving towards the camera
-                elif mid_diff_y[array_idx] < 1 and diff_area[array_idx] < 0:
+                elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
                     if mid_diff_x[array_idx] > 0:
-                        # Forward Right
-                        cur_dir[0] = 0
-                        cur_dir[1] = 1
+                        print(str(array_idx) + ' Forwards and Right')
                     elif mid_diff_x[array_idx] < 0:
-                        # Forward Left
-                        cur_dir[0] = 0
-                        cur_dir[1] = 0
-
-                try:
-                    direction[array_idx].pop(0)
-                except IndexError:
-                    direction.append([ FWD, FWD, FWD, FWD, FWD])
-                    direction[array_idx].pop(0)
-
-                if cur_dir[0] == 0:
-                    direction[array_idx].append(FWD)
-                    # if cur_dir[1] == 0:
-                    #     print('Forward Left')
-                    # elif cur_dir[1] == 1:
-                    #     print('Forward Right')
-                elif cur_dir[0] == 1:
-                    direction[array_idx].append(BAK)
-                    # if cur_dir[1] == 0:
-                    #     print('Backward Left')
-                    # elif cur_dir[1] == 1:
-                    #     print('Backward Right')
-                avg_dir = np.mean(direction[array_idx])
-                print(avg_dir)
-                print(direction)
-                if avg_dir > 0.5:
-                    print("Backward")
-                elif avg_dir < 0.5:
-                    print("Forward")
-
+                        print(str(array_idx) + ' Forwards and left' )
                 array_idx += 1
 
             cv2.imshow("img", img_brg)
