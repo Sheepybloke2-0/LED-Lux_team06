@@ -185,10 +185,10 @@ if __name__ == '__main__':
     region3_start = (960,0)
     region3_end = (1280,720)
 
-    # print("Quick XBee test")
-    # xbee.write(b'0n')
-    # time.sleep(10)
-    # xbee.write(b'0o')
+    print("Quick XBee test")
+    xbee.write(b'0n')
+    time.sleep(10)
+    xbee.write(b'0o')
 
     delay_counter = 0
     old_mid_x = [0]
@@ -314,7 +314,7 @@ if __name__ == '__main__':
                         cur_dir[0] = 1
                         cur_dir[1] = 0
                 # If negative and area is increasing, means (often) moving towards the camera
-                elif mid_diff_y[array_idx] < 1 and diff_area[array_idx] < 0:
+                elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
                     if mid_diff_x[array_idx] > 0:
                         # Forward Right
                         cur_dir[0] = 0
@@ -323,32 +323,40 @@ if __name__ == '__main__':
                         # Forward Left
                         cur_dir[0] = 0
                         cur_dir[1] = 0
+                else:
+                    # Send a null set if nothing changed
+                    cur_dir[0] = 2
+                    cur_dir[1] = 2
 
-                try:
-                    direction[array_idx].pop(0)
-                except IndexError:
-                    direction.append([ FWD, FWD, FWD, FWD, FWD])
-                    direction[array_idx].pop(0)
+                if cur_dir[0] != 2 or cur_dir[1] != 2:
+                    try:
+                        direction[array_idx].pop(0)
+                    except IndexError:
+                        direction.append([ FWD, FWD, FWD, FWD, FWD])
+                        direction[array_idx].pop(0)
 
-                if cur_dir[0] == 0:
-                    direction[array_idx].append(FWD)
-                    # if cur_dir[1] == 0:
-                    #     print('Forward Left')
-                    # elif cur_dir[1] == 1:
-                    #     print('Forward Right')
-                elif cur_dir[0] == 1:
-                    direction[array_idx].append(BAK)
-                    # if cur_dir[1] == 0:
-                    #     print('Backward Left')
-                    # elif cur_dir[1] == 1:
-                    #     print('Backward Right')
+                    if cur_dir[0] == 0:
+                        direction[array_idx].append(FWD)
+                        # if cur_dir[1] == 0:
+                        #     print('Forward Left')
+                        # elif cur_dir[1] == 1:
+                        #     print('Forward Right')
+                    elif cur_dir[0] == 1:
+                        direction[array_idx].append(BAK)
+                        # if cur_dir[1] == 0:
+                        #     print('Backward Left')
+                        # elif cur_dir[1] == 1:
+                        #     print('Backward Right')
+
                 avg_dir = np.mean(direction[array_idx])
                 print(avg_dir)
                 print(direction)
                 if avg_dir > 0.5:
                     print("Backward")
+                    xbee.write(b'0v\n')
                 elif avg_dir < 0.5:
                     print("Forward")
+                    xbee.write(b'0b\n')
 
                 array_idx += 1
 
