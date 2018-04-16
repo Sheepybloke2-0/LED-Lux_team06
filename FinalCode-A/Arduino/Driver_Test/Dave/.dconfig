@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ProjectConfig>
+    <ResourceReserve/>
+    <Solver>
+        <SolverBndMap>
+            <BindMap MUri="peripheral/scu/0/ccu/config" Proxy="app/CLOCK_XMC1/0/hwres_clkcntrlunit"/>
+            <BindMap MUri="devicepackage/0/14" Proxy="app/DIGITAL_IO/2/__pin_hwres_port_pin"/>
+            <BindMap MUri="port/p/0/pad/6" Proxy="app/DIGITAL_IO/1/hwres_port_pin"/>
+            <BindMap MUri="port/p/0/pad/15" Proxy="app/CPU_CTRL_XMC1/0/hwres_swd0_1"/>
+            <BindMap MUri="peripheral/cpu/0/exception/hardfault" Proxy="app/CPU_CTRL_XMC1/0/hwres_exception_hardfault"/>
+            <BindMap MUri="devicepackage/0/22" Proxy="app/DIGITAL_IO/0/__pin_hwres_port_pin"/>
+            <BindMap MUri="port/p/0/pad/14" Proxy="app/CPU_CTRL_XMC1/0/hwres_swd0_0"/>
+            <BindMap MUri="peripheral/scu/0/dco/2" Proxy="app/CLOCK_XMC1/0/hwres_dco"/>
+            <BindMap MUri="peripheral/cpu/0/systick" Proxy="app/SYSTIMER/0/hwres_syst"/>
+            <BindMap MUri="devicepackage/0/23" Proxy="app/DIGITAL_IO/1/__pin_hwres_port_pin"/>
+            <BindMap MUri="port/p/0/pad/5" Proxy="app/DIGITAL_IO/0/hwres_port_pin"/>
+            <BindMap MUri="port/p/1/pad/2" Proxy="app/DIGITAL_IO/2/hwres_port_pin"/>
+        </SolverBndMap>
+    </Solver>
+</ProjectConfig>
