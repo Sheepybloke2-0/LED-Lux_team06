@@ -176,24 +176,18 @@ if __name__ == '__main__':
     xbee = serial.Serial(PORT, BAUD_RATE)
 
     # To compensate for distance, draw middle a little larger
-    # TODO move to top?
     region1_start = (0,0)
     region1_end = (320,720)
-    region1_area = 230400
 
     region2_start = (320,0)
     region2_end = (960,720)
-    region2_area = 460800
 
     region3_start = (960,0)
     region3_end = (1280,720)
-    region3_area = 230400
-
-    total_area = region1_area + region2_area + region3_area
 
     print("Quick XBee test")
     xbee.write(b'0n')
-    time.sleep(5)
+    time.sleep(10)
     xbee.write(b'0o')
 
     delay_counter = 0
@@ -281,133 +275,86 @@ if __name__ == '__main__':
                 # Draw the mid point
                 cv2.circle(img_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
 
-                # Assign regionality to the box
-                # Check percentage against total area. If greater than 80%, we'll assume too close for judgement and just assume on.
-                total_percent_area = abs(area / total_area)
-                if total_percent_area <= 0.70:
-                    # Catagorize the regionality using the X values
-                    # Start by checking region 1
-                    if bounding_box[1] <= region1_end[0]:
-                        # Find the area of the other regions
-                        if bounding_box[3] < region1_end[0]:
-                            # Case when both are in the region1 box. Get percentage, then assign region
-                            reg1_percent = area / region1_area
-                            reg2_percent = 0
-                            reg3_percent = 0
-                        elif bounding_box[3] > region3_start[0]:
-                            reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
-                            # If the largest x is in region3, spans all of region 2
-                            reg2_percent = (640 * dif_y) / region2_area
-                            reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
-                        elif bounding_box[3] < region2_end[0] and bounding_box[3] > region2_start[0]:
-                            # No region 3
-                            reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
-                            reg2_percent = ((bounding_box[3] - region2_start[0])* dif_y) / region2_area
-                            reg3_percent = 0
+                # Assume 1 to 1 indx to person
+                # If is positive, person is moving to their left
+                # If is negative, person is moving to their right
+                try:
+                    mid_diff_x.append(old_mid_x[array_idx] - mid_x)
+                except IndexError:
+                    old_mid_x.append(0)
+                    mid_diff_x.append(old_mid_x[array_idx] - mid_x)
+                old_mid_x[array_idx] = mid_x
 
-                    elif bounding_box[1] <= region2_end[0]:
-                        if bounding_box[3] <= region2_end[0]:
-                            reg1_percent = 0
-                            reg2_percent = area / region2_area
-                            reg3_percent = 0
-                        elif bounding_box[3] > region3_start[0]:
-                            reg1_percent = 0
-                            reg2_percent = ((region2_end[0] - bounding_box[1]) * dif_y) / region2_area
-                            reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
+                # If is positive, this means that y is decreasing aka moving up in the frame.
+                # If is negative, this means that y is increasing aka moving down in the frame.
+                try:
+                    mid_diff_y.append(old_mid_y[array_idx] - mid_y)
+                except IndexError:
+                    old_mid_y.append(0)
+                    mid_diff_y.append(old_mid_y[array_idx] - mid_x)
+                old_mid_y[array_idx] = mid_y
 
-                    # If the smallest x is in region3, all will be in region 3
-                    if bounding_box[1] > region3_start[0]:
-                        reg1_percent = 0
-                        reg2_percent = 0
-                        reg3_percent = area / region3_area
+                # If area is positive, this means that the bounding box is shrinking aka moving back in the FOV
+                # If area is negative, this means that the bounding box is growing aka moving forward in the FOV
+                try:
+                    diff_area.append(old_area[array_idx] - area)
+                except IndexError:
+                    old_area.append(0)
+                    diff_area.append(old_area[array_idx] - area)
+                old_area[array_idx] = area
 
-                    print(reg1_percent)
-                    print(reg2_percent)
-                    print(reg3_percent)
-                    if reg1_percent > 0.75:
-                        xbee.write(b'0w\n')
-                    elif reg3_percent > 0.75:
-                        xbee.write(b'0c\n')
+                # If positive and box area is shrinking, means (often) moving back into the distance
+                if mid_diff_y[array_idx] > 0 and diff_area[array_idx] > 0:
+                    if mid_diff_x[array_idx] > 0:
+                        # Backward Left
+                        cur_dir[0] = 1
+                        cur_dir[1] = 1
+                    elif mid_diff_x[array_idx] < 0:
+                        # Backward Right
+                        cur_dir[0] = 1
+                        cur_dir[1] = 0
+                # If negative and area is increasing, means (often) moving towards the camera
+                elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
+                    if mid_diff_x[array_idx] > 0:
+                        # Forward Right
+                        cur_dir[0] = 0
+                        cur_dir[1] = 1
+                    elif mid_diff_x[array_idx] < 0:
+                        # Forward Left
+                        cur_dir[0] = 0
+                        cur_dir[1] = 0
+                # Send a null set if nothing changed
+                else:
+                    cur_dir[0] = 2
+                    cur_dir[1] = 2
 
-                    # TODO break into a Function
-                    # Assume 1 to 1 indx to person
-                    # If is positive, person is moving to their left
-                    # If is negative, person is moving to their right
+                if cur_dir[0] != 2 or cur_dir[1] != 2:
                     try:
-                        mid_diff_x.append(old_mid_x[array_idx] - mid_x)
+                        direction[array_idx].pop(0)
                     except IndexError:
-                        old_mid_x.append(0)
-                        mid_diff_x.append(old_mid_x[array_idx] - mid_x)
-                    old_mid_x[array_idx] = mid_x
+                        direction.append([ FWD, FWD, FWD, FWD, FWD])
+                        direction[array_idx].pop(0)
 
-                    # If is positive, this means that y is decreasing aka moving up in the frame.
-                    # If is negative, this means that y is increasing aka moving down in the frame.
-                    try:
-                        mid_diff_y.append(old_mid_y[array_idx] - mid_y)
-                    except IndexError:
-                        old_mid_y.append(0)
-                        mid_diff_y.append(old_mid_y[array_idx] - mid_x)
-                    old_mid_y[array_idx] = mid_y
+                    if cur_dir[0] == 0:
+                        direction[array_idx].append(FWD)
+                        # if cur_dir[1] == 0:
+                        #     print('Forward Left')
+                        # elif cur_dir[1] == 1:
+                        #     print('Forward Right')
+                    elif cur_dir[0] == 1:
+                        direction[array_idx].append(BAK)
+                        # if cur_dir[1] == 0:
+                        #     print('Backward Left')
+                        # elif cur_dir[1] == 1:
+                        #     print('Backward Right')
 
-                    # If area is positive, this means that the bounding box is shrinking aka moving back in the FOV
-                    # If area is negative, this means that the bounding box is growing aka moving forward in the FOV
-                    try:
-                        diff_area.append(old_area[array_idx] - area)
-                    except IndexError:
-                        old_area.append(0)
-                        diff_area.append(old_area[array_idx] - area)
-                    old_area[array_idx] = area
-
-                    # If positive and box area is shrinking, means (often) moving back into the distance
-                    if mid_diff_y[array_idx] > 0 and diff_area[array_idx] > 0:
-                        if mid_diff_x[array_idx] > 0:
-                            # Backward Left
-                            cur_dir[0] = 1
-                            cur_dir[1] = 1
-                        elif mid_diff_x[array_idx] < 0:
-                            # Backward Right
-                            cur_dir[0] = 1
-                            cur_dir[1] = 0
-                    # If negative and area is increasing, means (often) moving towards the camera
-                    elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
-                        if mid_diff_x[array_idx] > 0:
-                            # Forward Right
-                            cur_dir[0] = 0
-                            cur_dir[1] = 1
-                        elif mid_diff_x[array_idx] < 0:
-                            # Forward Left
-                            cur_dir[0] = 0
-                            cur_dir[1] = 0
-                    # Send a null set if nothing changed
-                    else:
-                        cur_dir[0] = 2
-                        cur_dir[1] = 2
-
-                    if cur_dir[0] != 2 or cur_dir[1] != 2:
-                        try:
-                            direction[array_idx].pop(0)
-                        except IndexError:
-                            direction.append([ FWD, FWD, FWD, FWD, FWD])
-                            direction[array_idx].pop(0)
-
-                        if cur_dir[0] == 0:
-                            direction[array_idx].append(FWD)
-                            # if cur_dir[1] == 0:
-                            #     print('Forward Left')
-                            # elif cur_dir[1] == 1:
-                            #     print('Forward Right')
-                        elif cur_dir[0] == 1:
-                            direction[array_idx].append(BAK)
-                            # if cur_dir[1] == 0:
-                            #     print('Backward Left')
-                            # elif cur_dir[1] == 1:
-                            #     print('Backward Right')
-
-                    avg_dir = np.mean(direction[array_idx])
-                    if avg_dir > 0.5:
-                        print("Backward")
-                    elif avg_dir < 0.5:
-                        print("Forward")
+                avg_dir = np.mean(direction[array_idx])
+                if avg_dir > 0.5:
+                    print("Backward")
+                    xbee.write(b'0v\n')
+                elif avg_dir < 0.5:
+                    print("Forward")
+                    xbee.write(b'0b\n')
 
                 array_idx += 1
 
