@@ -51,9 +51,24 @@ TIME_OUT = 25
 person_in_frame = False
 lights = True
 
-# ROI Constants
+# Directional Constants
 FWD = 0
 BAK = 1
+
+# Regions
+region1_start = (0,0)
+region1_end = (320,720)
+region1_area = 230400
+
+region2_start = (320,0)
+region2_end = (960,720)
+region2_area = 460800
+
+region3_start = (960,0)
+region3_end = (1280,720)
+region3_area = 230400
+
+total_area = region1_area + region2_area + region3_area
 
 # Label maps connect the classes to the categories names
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -156,6 +171,63 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
 
     sess.close()
 
+def get_regions( bounding_box, area, dif_x, dif_y):
+    # Assign regionality to the box
+    # Check percentage against total area. If greater than 70%, we'll assume too close for judgement and just assume on.
+    total_percent_area = abs(area / total_area)
+    if total_percent_area <= 0.70:
+        # Catagorize the regionality using the X values
+        # Start by checking region 1
+        if bounding_box[1] <= region1_end[0]:
+            # Find the area of the other regions
+            if bounding_box[3] < region1_end[0]:
+                # Case when both are in the region1 box. Get percentage, then assign region
+                reg1_percent = area / region1_area
+                reg2_percent = 0
+                reg3_percent = 0
+            elif bounding_box[3] > region3_start[0]:
+                reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
+                # If the largest x is in region3, spans all of region 2
+                reg2_percent = (640 * dif_y) / region2_area
+                reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
+            elif bounding_box[3] < region2_end[0] and bounding_box[3] > region2_start[0]:
+                # No region 3
+                reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
+                reg2_percent = ((bounding_box[3] - region2_start[0])* dif_y) / region2_area
+                reg3_percent = 0
+
+        elif bounding_box[1] <= region2_end[0]:
+            if bounding_box[3] <= region2_end[0]:
+                reg1_percent = 0
+                reg2_percent = area / region2_area
+                reg3_percent = 0
+            elif bounding_box[3] > region3_start[0]:
+                reg1_percent = 0
+                reg2_percent = ((region2_end[0] - bounding_box[1]) * dif_y) / region2_area
+                reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
+
+        # If the smallest x is in region3, all will be in region 3
+        elif bounding_box[1] > region3_start[0]:
+            reg1_percent = 0
+            reg2_percent = 0
+            reg3_percent = area / region3_area
+    else:
+        reg1_percent = 0
+        reg2_percent = 0
+        reg3_percent = 0
+
+    return reg1_percent, reg2_percent, reg3_percent, total_percent_area
+
+def get_dif(cur_value, dif_array, old_value_array, idx):
+    try:
+        dif_array.append(old_value_array[idx] - cur_value)
+    except IndexError:
+        old_value_array.append(0)
+        dif_array.append(old_value_array[idx] - cur_value)
+    old_value_array[idx] = cur_value
+    return dif_array, old_value_array
+
+
 if __name__ == '__main__':
     # Start the multiprocessing
     logger = multiprocessing.log_to_stderr()
@@ -177,19 +249,6 @@ if __name__ == '__main__':
 
     # To compensate for distance, draw middle a little larger
     # TODO move to top?
-    region1_start = (0,0)
-    region1_end = (320,720)
-    region1_area = 230400
-
-    region2_start = (320,0)
-    region2_end = (960,720)
-    region2_area = 460800
-
-    region3_start = (960,0)
-    region3_end = (1280,720)
-    region3_area = 230400
-
-    total_area = region1_area + region2_area + region3_area
 
     print("Quick XBee test")
     xbee.write(b'0n')
@@ -271,6 +330,8 @@ if __name__ == '__main__':
 
                 dif_y = bounding_box[2] - bounding_box[0]
                 dif_x = bounding_box[3] - bounding_box[1]
+                print(dif_x)
+                print(dif_y)
 
                 # Draw point halfway down the image in the center of the box
                 mid_y = bounding_box[0] + (dif_y/2)
@@ -281,46 +342,9 @@ if __name__ == '__main__':
                 # Draw the mid point
                 cv2.circle(img_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
 
-                # Assign regionality to the box
-                # Check percentage against total area. If greater than 80%, we'll assume too close for judgement and just assume on.
-                total_percent_area = abs(area / total_area)
-                if total_percent_area <= 0.70:
-                    # Catagorize the regionality using the X values
-                    # Start by checking region 1
-                    if bounding_box[1] <= region1_end[0]:
-                        # Find the area of the other regions
-                        if bounding_box[3] < region1_end[0]:
-                            # Case when both are in the region1 box. Get percentage, then assign region
-                            reg1_percent = area / region1_area
-                            reg2_percent = 0
-                            reg3_percent = 0
-                        elif bounding_box[3] > region3_start[0]:
-                            reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
-                            # If the largest x is in region3, spans all of region 2
-                            reg2_percent = (640 * dif_y) / region2_area
-                            reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
-                        elif bounding_box[3] < region2_end[0] and bounding_box[3] > region2_start[0]:
-                            # No region 3
-                            reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
-                            reg2_percent = ((bounding_box[3] - region2_start[0])* dif_y) / region2_area
-                            reg3_percent = 0
+                reg1_percent, reg2_percent, reg3_percent, total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
 
-                    elif bounding_box[1] <= region2_end[0]:
-                        if bounding_box[3] <= region2_end[0]:
-                            reg1_percent = 0
-                            reg2_percent = area / region2_area
-                            reg3_percent = 0
-                        elif bounding_box[3] > region3_start[0]:
-                            reg1_percent = 0
-                            reg2_percent = ((region2_end[0] - bounding_box[1]) * dif_y) / region2_area
-                            reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
-
-                    # If the smallest x is in region3, all will be in region 3
-                    if bounding_box[1] > region3_start[0]:
-                        reg1_percent = 0
-                        reg2_percent = 0
-                        reg3_percent = area / region3_area
-
+                if total_percent_area <= 0.75:
                     print(reg1_percent)
                     print(reg2_percent)
                     print(reg3_percent)
@@ -329,59 +353,46 @@ if __name__ == '__main__':
                     elif reg3_percent > 0.75:
                         xbee.write(b'0c\n')
 
-                    # TODO break into a Function
                     # Assume 1 to 1 indx to person
                     # If is positive, person is moving to their left
                     # If is negative, person is moving to their right
-                    try:
-                        mid_diff_x.append(old_mid_x[array_idx] - mid_x)
-                    except IndexError:
-                        old_mid_x.append(0)
-                        mid_diff_x.append(old_mid_x[array_idx] - mid_x)
-                    old_mid_x[array_idx] = mid_x
+                    mid_diff_x,  old_mid_x = get_dif(mid_x, mid_diff_x, old_mid_x, array_idx)
 
                     # If is positive, this means that y is decreasing aka moving up in the frame.
                     # If is negative, this means that y is increasing aka moving down in the frame.
-                    try:
-                        mid_diff_y.append(old_mid_y[array_idx] - mid_y)
-                    except IndexError:
-                        old_mid_y.append(0)
-                        mid_diff_y.append(old_mid_y[array_idx] - mid_x)
-                    old_mid_y[array_idx] = mid_y
+                    mid_diff_y,  old_mid_y = get_dif(mid_y, mid_diff_y, old_mid_y, array_idx)
 
-                    # If area is positive, this means that the bounding box is shrinking aka moving back in the FOV
-                    # If area is negative, this means that the bounding box is growing aka moving forward in the FOV
-                    try:
-                        diff_area.append(old_area[array_idx] - area)
-                    except IndexError:
-                        old_area.append(0)
-                        diff_area.append(old_area[array_idx] - area)
-                    old_area[array_idx] = area
+                    # If is positive, this means that area is decreasing aka moving backwards  in the frame.
+                    # If is negative, this means that area is increasing aka moving forwardin the frame.
+                    diff_area, old_area = get_dif(area, diff_area, old_area, array_idx)
 
-                    # If positive and box area is shrinking, means (often) moving back into the distance
-                    if mid_diff_y[array_idx] > 0 and diff_area[array_idx] > 0:
-                        if mid_diff_x[array_idx] > 0:
-                            # Backward Left
-                            cur_dir[0] = 1
-                            cur_dir[1] = 1
-                        elif mid_diff_x[array_idx] < 0:
-                            # Backward Right
-                            cur_dir[0] = 1
-                            cur_dir[1] = 0
-                    # If negative and area is increasing, means (often) moving towards the camera
-                    elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
-                        if mid_diff_x[array_idx] > 0:
-                            # Forward Right
-                            cur_dir[0] = 0
-                            cur_dir[1] = 1
-                        elif mid_diff_x[array_idx] < 0:
-                            # Forward Left
-                            cur_dir[0] = 0
-                            cur_dir[1] = 0
-                    # Send a null set if nothing changed
-                    else:
-                        cur_dir[0] = 2
-                        cur_dir[1] = 2
+                    try:
+                        # If positive and box area is shrinking, means (often) moving back into the distance
+                        if mid_diff_y[array_idx] > 0 and diff_area[array_idx] > 0:
+                            if mid_diff_x[array_idx] > 0:
+                                # Backward Left
+                                cur_dir[0] = 1
+                                cur_dir[1] = 1
+                            elif mid_diff_x[array_idx] < 0:
+                                # Backward Right
+                                cur_dir[0] = 1
+                                cur_dir[1] = 0
+                        # If negative and area is increasing, means (often) moving towards the camera
+                        elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
+                            if mid_diff_x[array_idx] > 0:
+                                # Forward Right
+                                cur_dir[0] = 0
+                                cur_dir[1] = 1
+                            elif mid_diff_x[array_idx] < 0:
+                                # Forward Left
+                                cur_dir[0] = 0
+                                cur_dir[1] = 0
+                        # Send a null set if nothing changed
+                        else:
+                            cur_dir[0] = 2
+                            cur_dir[1] = 2
+                    except IndexError:
+                        continue
 
                     if cur_dir[0] != 2 or cur_dir[1] != 2:
                         try:
@@ -421,5 +432,6 @@ if __name__ == '__main__':
             break
 
     cv2.destroyAllWindows()
+    xbee.write(b'0o\n')
     webcam.stop()
     pool.terminate()
