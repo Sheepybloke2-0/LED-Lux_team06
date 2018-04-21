@@ -281,10 +281,15 @@ if __name__ == '__main__':
             person_idx = []
             for id in classes_index:
                 current_index = classes_index.index
+                if id == 52:
+                    if scores[0][current_index] > 0.15:
+                        print(scores[0][current_index])
                 # There's almost always a 1, just very low probablility. Ensure i is greater than 50%
                 if scores[0][current_index] > 0.50:
                     # Add all found objects to a List
                     found_obj.append(id)
+                    if id == 52:
+                        print('Found bananaannanananana')
                     if id == 1:
                         person_idx.append(current_index)
 
@@ -293,8 +298,7 @@ if __name__ == '__main__':
                 if person_in_frame != True:
                     person_in_frame = True
                     delay_counter = 0
-                    if lights == False:
-                        xbee.write(b'0n')
+                    xbee.write(b'0n')
                     lights = True
             else:
                 person_in_frame = False
@@ -331,8 +335,6 @@ if __name__ == '__main__':
 
                 dif_y = bounding_box[2] - bounding_box[0]
                 dif_x = bounding_box[3] - bounding_box[1]
-                print(dif_x)
-                print(dif_y)
 
                 # Draw point halfway down the image in the center of the box
                 mid_y = bounding_box[0] + (dif_y/2)
@@ -346,9 +348,9 @@ if __name__ == '__main__':
                 reg1_percent, reg2_percent, reg3_percent, total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
 
                 if total_percent_area <= 0.75:
-                    print(reg1_percent)
-                    print(reg2_percent)
-                    print(reg3_percent)
+                    # print(reg1_percent)
+                    # print(reg2_percent)
+                    # print(reg3_percent)
                     if reg1_percent > 0.75:
                         xbee.write(b'0w\n')
                     elif reg3_percent > 0.75:
@@ -416,10 +418,10 @@ if __name__ == '__main__':
                             #     print('Backward Right')
 
                     avg_dir = np.mean(direction[array_idx])
-                    if avg_dir > 0.5:
-                        print("Backward")
-                    elif avg_dir < 0.5:
-                        print("Forward")
+                    # if avg_dir > 0.5:
+                    #     print("Backward")
+                    # elif avg_dir < 0.5:
+                    #     print("Forward")
 
                 array_idx += 1
 

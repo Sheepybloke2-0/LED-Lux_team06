@@ -172,6 +172,8 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
     sess.close()
 
 def get_regions( bounding_box, area, dif_x, dif_y):
+    reg_bbox_area_dict = {'reg1': 0, 'reg2': 0, 'reg3': 0}
+    reg_total_area_dict = {'reg1': 0, 'reg2': 0, 'reg3': 0}
     # Assign regionality to the box
     # Check percentage against total area. If greater than 70%, we'll assume too close for judgement and just assume on.
     total_percent_area = abs(area / total_area)
@@ -182,41 +184,46 @@ def get_regions( bounding_box, area, dif_x, dif_y):
             # Find the area of the other regions
             if bounding_box[3] < region1_end[0]:
                 # Case when both are in the region1 box. Get percentage, then assign region
-                reg1_percent = area / region1_area
-                reg2_percent = 0
-                reg3_percent = 0
+                reg_total_area_dict['reg1'] = area / region1_area
+                reg_bbox_area_dict['reg1'] = 1
+
             elif bounding_box[3] > region3_start[0]:
-                reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
+                reg_total_area_dict['reg1'] = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
+                reg_bbox_area_dict['reg1'] = ((region1_end[0] - bounding_box[1]) * dif_y) / area
+
                 # If the largest x is in region3, spans all of region 2
-                reg2_percent = (640 * dif_y) / region2_area
-                reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
+                reg_total_area_dict['reg2'] = (640 * dif_y) / region2_area
+                reg_bbox_area_dict['reg2'] = (640 * dif_y) / area
+
+                reg_total_area_dict['reg3'] = ((bounding_box[3] - 960) * dif_y) / region3_area
+                reg_bbox_area_dict['reg3'] = ((bounding_box[3] - 960) * dif_y) / area
+
             elif bounding_box[3] < region2_end[0] and bounding_box[3] > region2_start[0]:
                 # No region 3
-                reg1_percent = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
-                reg2_percent = ((bounding_box[3] - region2_start[0])* dif_y) / region2_area
-                reg3_percent = 0
+                reg_total_area_dict['reg1'] = ((region1_end[0] - bounding_box[1]) * dif_y) / region1_area
+                reg_bbox_area_dict['reg1'] = ((region1_end[0] - bounding_box[1]) * dif_y) / area
+
+                reg_total_area_dict['reg2'] = ((bounding_box[3] - region2_start[0]) * dif_y) / region2_area
+                reg_bbox_area_dict['reg2'] = ((bounding_box[3] - region2_start[0]) * dif_y) / area
 
         elif bounding_box[1] <= region2_end[0]:
             if bounding_box[3] <= region2_end[0]:
-                reg1_percent = 0
-                reg2_percent = area / region2_area
-                reg3_percent = 0
+                reg_total_area_dict['reg2'] = area / region2_area
+                reg_bbox_area_dict['reg2'] = 1
+
             elif bounding_box[3] > region3_start[0]:
-                reg1_percent = 0
-                reg2_percent = ((region2_end[0] - bounding_box[1]) * dif_y) / region2_area
-                reg3_percent = ((bounding_box[3] - 960) * dif_y) / region3_area
+                reg_total_area_dict['reg2'] = ((region2_end[0] - bounding_box[1]) * dif_y) / region2_area
+                reg_bbox_area_dict['reg2'] = ((region2_end[0] - bounding_box[1]) * dif_y) / area
+
+                reg_total_area_dict['reg3'] = ((bounding_box[3] - 960) * dif_y) / region3_area
+                reg_bbox_area_dict['reg3'] = ((bounding_box[3] - 960) * dif_y) / area
 
         # If the smallest x is in region3, all will be in region 3
         elif bounding_box[1] > region3_start[0]:
-            reg1_percent = 0
-            reg2_percent = 0
-            reg3_percent = area / region3_area
-    else:
-        reg1_percent = 0
-        reg2_percent = 0
-        reg3_percent = 0
+            reg_total_area_dict['reg3'] = area / region2_area
+            reg_bbox_area_dict['reg3'] = 1
 
-    return reg1_percent, reg2_percent, reg3_percent, total_percent_area
+    return reg_total_area_dict, reg_bbox_area_dict, total_percent_area
 
 def get_dif(cur_value, dif_array, old_value_array, idx):
     try:
@@ -259,9 +266,9 @@ if __name__ == '__main__':
     old_mid_x = [0]
     old_mid_y = [0]
     old_area = [0]
+    old_reg_bbox_area = [{'reg1': 0, 'reg2': 0, 'reg3': 0}]
     # Assume
     direction = [[ FWD, FWD, FWD, FWD, FWD]]
-
 
     # Start the tensorflow session
     while(1):
@@ -331,8 +338,6 @@ if __name__ == '__main__':
 
                 dif_y = bounding_box[2] - bounding_box[0]
                 dif_x = bounding_box[3] - bounding_box[1]
-                print(dif_x)
-                print(dif_y)
 
                 # Draw point halfway down the image in the center of the box
                 mid_y = bounding_box[0] + (dif_y/2)
@@ -343,16 +348,45 @@ if __name__ == '__main__':
                 # Draw the mid point
                 cv2.circle(img_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
 
-                reg1_percent, reg2_percent, reg3_percent, total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
+                reg_total_area_dict, reg_bbox_area_dict, total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
 
-                if total_percent_area <= 0.75:
-                    print(reg1_percent)
-                    print(reg2_percent)
-                    print(reg3_percent)
-                    if reg1_percent > 0.75:
-                        xbee.write(b'0w\n')
-                    elif reg3_percent > 0.75:
-                        xbee.write(b'0c\n')
+                if total_percent_area <= 0.70:
+                    print("Total percent of REG1: %s " % reg_total_area_dict['reg1'] )
+                    print("Total percent of area in REG1: %s " % reg_bbox_area_dict['reg1'] )
+                    print("Total percent of REG2: %s " % reg_total_area_dict['reg2'] )
+                    print("Total percent of area in REG2: %s " % reg_bbox_area_dict['reg2'] )
+                    print("Total percent of REG3: %s " % reg_total_area_dict['reg3'] )
+                    print("Total percent of area in REG2: %s " % reg_bbox_area_dict['reg3'] )
+
+                    # Ensure that the change thats occured is big enough
+                    if abs(reg_bbox_area_dict['reg1'] - old_reg_bbox_area[array_idx]['reg1']) > 0.10:
+                        if reg_bbox_area_dict['reg1'] > old_reg_bbox_area[array_idx]['reg1']:
+                            xbee.write(b'1b\n')
+                            print('Brigher 1')
+                        elif reg_bbox_area_dict['reg1'] < old_reg_bbox_area[array_idx]['reg1']:
+                            xbee.write(b'1v\n')
+                            print('Dimmer 1')
+
+                    if abs(reg_bbox_area_dict['reg2'] - old_reg_bbox_area[array_idx]['reg2']) > 0.10:
+                        if reg_bbox_area_dict['reg2'] > old_reg_bbox_area[array_idx]['reg2']:
+                            xbee.write(b'2b\n')
+                            print('Brigher 2')
+                        elif reg_bbox_area_dict['reg2'] < old_reg_bbox_area[array_idx]['reg2']:
+                            xbee.write(b'2v\n')
+                            print('Dimmer 2')
+
+                    if abs(reg_bbox_area_dict['reg3'] - old_reg_bbox_area[array_idx]['reg3']) > 0.10:
+                        if reg_bbox_area_dict['reg3'] > old_reg_bbox_area[array_idx]['reg3']:
+                            xbee.write(b'3b\n')
+                            print('Brigher 3')
+                        elif reg_bbox_area_dict['reg3'] < old_reg_bbox_area[array_idx]['reg3']:
+                            xbee.write(b'3v\n')
+                            print('Dimmer 3')
+                    try:
+                        old_reg_bbox_area[array_idx] = reg_bbox_area_dict
+                    except IndexError:
+                        old_reg_bbox_area.append({})
+                        old_reg_bbox_area[array_idx] = reg_bbox_area_dict
 
                     # Assume 1 to 1 indx to person
                     # If is positive, person is moving to their left
