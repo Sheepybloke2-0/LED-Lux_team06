@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <title> Button to control the lights! </title>
+  <style type="text/css">
+    {%include "static/main.css"%}
+  </style>
+  <script>
+    function sliderUpdate(brightness) {
+      document.querySelector('#brightness-level-all').value = brightness
+    }
+
+    // function sliderUpdate(brightness) {
+    //   document.querySelector('#warm-level-all').value = brightness
+    // }
+    //
+    // function sliderUpdate(brightness) {
+    //   document.querySelector('#cool-level-all').value = brightness
+    // }
+  </script>
+</head>
+<body>
+  <div class="text-container">
+    <h1>Button to control the lights!</h1>
+  </div>
+  <div class="container">
+    <div class="slide-container" >
+      <form class="slide-container">
+        <p>
+          {{ form.brightness.label}}
+          {{ form.brightness(min=0, max=10, oninput="sliderUpdate(value)", class="slider") }}
+         <output for="brightness" id="brightness-level-all">{{ form.brightness.data }}</output>
+        </p>
+      </form>
+    </div>
+    <div class="slide-container" >
+      <form class="slide-container">
+        <p>
+          {{ form.brightness.label}}
+          {{ form.brightness(min=0, max=10, oninput="sliderUpdate(value)", class="slider") }}
+          <output for="brightness" id="brightness-level-all">{{ form.brightness.data }}</output>
+        </p>
+      </form>
+    </div>
+    <div class="slide-container" >
+      <form class="slide-container">
+        <p>
+          {{ form.brightness.label}}
+          {{ form.brightness(min=0, max=10, oninput="sliderUpdate(value)", class="slider") }}
+          <output for="brightness" id="brightness-level-all">{{ form.brightness.data }}</output>
+        </p>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
