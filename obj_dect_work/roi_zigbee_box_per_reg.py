@@ -56,7 +56,7 @@ BAK = 1
 LFT = 0
 RGT = 1
 
-AREA_THRESHOLD = 4000
+AREA_THRESHOLD = 2000
 X_THRESHOLD  = 15
 Y_THRESHOLD  = 1
 
@@ -72,6 +72,10 @@ region2_area = 460800
 region3_start = (960,0)
 region3_end = (1280,720)
 region3_area = 230400
+
+region_dist_start = (854, 340)
+region_dist_end = (954, 440)
+region_dist_depth = 5
 
 total_area = region1_area + region2_area + region3_area
 
@@ -266,11 +270,11 @@ if __name__ == '__main__':
     # To compensate for distance, draw middle a little larger
     # TODO move to top?
 
-    # print("Quick XBee test")
-    # xbee.write(b'0n')
-    # time.sleep(5)
-    # xbee.write(b'0o')
-    #
+    print("Quick XBee test")
+    xbee.write(b'0n')
+    time.sleep(5)
+    xbee.write(b'0o')
+
     delay_counter = 0
     old_mid_x = [0]
     old_mid_y = [0]
@@ -314,6 +318,7 @@ if __name__ == '__main__':
             cv2.rectangle(img_brg, region1_start, region1_end, (125, 0, 125), 2)
             cv2.rectangle(img_brg, region2_start, region2_end, (125, 0, 125), 2)
             cv2.rectangle(img_brg, region3_start, region3_end, (125, 0, 125), 2)
+            cv2.rectangle(img_brg, region_dist_start, region_dist_end, (125, 0, 125), 2)
 
             # If there is person found, do some checking to get their location and turn on the proper lights
             if 1 in found_obj:
@@ -513,13 +518,18 @@ if __name__ == '__main__':
                                         dist[array_idx] -= 1
                                 print(dist)
 
+                        if dist[array_idx] == 5 and bounding_box[1] <= mid_x <= bounding_box[3]:
+                            xbee.write(b'0o\n')
+                            lights = { 'light1': False, 'light2': False, 'light3': False}
+                            print("Person %s: In region!" % (array_idx))
+
                     array_idx += 1
 
             else:
                 delay_counter += 1
 
             if delay_counter == TIME_OUT:
-                xbee.write(b'0o')
+                xbee.write(b'0o\n')
                 delay_counter = 0
                 lights = { 'light1': False, 'light2': False, 'light3': False}
 
