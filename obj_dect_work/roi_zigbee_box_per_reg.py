@@ -48,12 +48,17 @@ WIDTH  = 1280
 
 # Count the number of people
 TIME_OUT = 25
-person_in_frame = False
-lights = True
+lights = { 'light1': False, 'light2': False, 'light3': False}
 
 # Directional Constants
 FWD = 0
 BAK = 1
+LFT = 0
+RGT = 1
+
+AREA_THRESHOLD = 4000
+X_THRESHOLD  = 15
+Y_THRESHOLD  = 1
 
 # Regions
 region1_start = (0,0)
@@ -222,6 +227,10 @@ def get_regions( bounding_box, area, dif_x, dif_y):
         elif bounding_box[1] > region3_start[0]:
             reg_total_area_dict['reg3'] = area / region2_area
             reg_bbox_area_dict['reg3'] = 1
+    else:
+        # If the person is too close to track, set everything to 1
+        reg_bbox_area_dict = {'reg1': 1, 'reg2': 1, 'reg3': 1}
+        reg_total_area_dict = {'reg1': 1, 'reg2': 1, 'reg3': 1}
 
     return reg_total_area_dict, reg_bbox_area_dict, total_percent_area
 
@@ -257,18 +266,20 @@ if __name__ == '__main__':
     # To compensate for distance, draw middle a little larger
     # TODO move to top?
 
-    print("Quick XBee test")
-    xbee.write(b'0n')
-    time.sleep(5)
-    xbee.write(b'0o')
-
+    # print("Quick XBee test")
+    # xbee.write(b'0n')
+    # time.sleep(5)
+    # xbee.write(b'0o')
+    #
     delay_counter = 0
     old_mid_x = [0]
     old_mid_y = [0]
     old_area = [0]
     old_reg_bbox_area = [{'reg1': 0, 'reg2': 0, 'reg3': 0}]
     # Assume
-    direction = [[ FWD, FWD, FWD, FWD, FWD]]
+    direction = [[ LFT, LFT, LFT]]
+    depth = [[ FWD, FWD, FWD]]
+    dist = [ 0 ]
 
     # Start the tensorflow session
     while(1):
@@ -288,31 +299,14 @@ if __name__ == '__main__':
             person_idx = []
             for id in classes_index:
                 current_index = classes_index.index
+                # if id == 72:
+                #     print(scores[0][current_index])
                 # There's almost always a 1, just very low probablility. Ensure i is greater than 50%
                 if scores[0][current_index] > 0.50:
                     # Add all found objects to a List
                     found_obj.append(id)
                     if id == 1:
                         person_idx.append(current_index)
-
-            # If a person was found and they weren't there before, add 1
-            if 1 in found_obj:
-                if person_in_frame != True:
-                    person_in_frame = True
-                    delay_counter = 0
-                    if lights == False:
-                        xbee.write(b'0n')
-                    lights = True
-            else:
-                person_in_frame = False
-                delay_counter += 1
-                # print(delay_counter)
-
-            if delay_counter == TIME_OUT:
-                if lights == True:
-                    xbee.write(b'0o')
-                    lights = False
-                    delay_counter = 0
 
             img_brg   = cv2.cvtColor(output_frame_q.get(), cv2.COLOR_RGB2BGR)
 
@@ -321,141 +315,213 @@ if __name__ == '__main__':
             cv2.rectangle(img_brg, region2_start, region2_end, (125, 0, 125), 2)
             cv2.rectangle(img_brg, region3_start, region3_end, (125, 0, 125), 2)
 
-            # Normazile the image to work with the scale. Tensorflow coords are (ymin, xmin, ymax, xmax)
-            mid_diff_x = []
-            mid_diff_y = []
-            diff_area = []
-            # Forward = 0,0; backward = 0,1; left = 1,0; right = 1,1; respectively
-            cur_dir = [0, 0]
-            array_idx = 0
-            for box_idx in person_idx:
-                # TODO: Break into a function and multiplex?
-                bounding_box = []
-                bounding_box.append(boxes[0][box_idx][0] * HEIGHT)
-                bounding_box.append(boxes[0][box_idx][1] * WIDTH)
-                bounding_box.append(boxes[0][box_idx][2] * HEIGHT)
-                bounding_box.append(boxes[0][box_idx][3] * WIDTH)
+            # If there is person found, do some checking to get their location and turn on the proper lights
+            if 1 in found_obj:
+                # Normazile the image to work with the scale. Tensorflow coords are (ymin, xmin, ymax, xmax)
+                mid_diff_x = []
+                mid_diff_y = []
+                diff_area = []
+                # Forward = 0,0; backward = 0,1; left = 1,0; right = 1,1; respectively
+                cur_dir = [0, 0]
+                array_idx = 0
+                for box_idx in person_idx:
+                    # TODO: Break into a function and multiplex?
+                    bounding_box = []
+                    bounding_box.append(boxes[0][box_idx][0] * HEIGHT)
+                    bounding_box.append(boxes[0][box_idx][1] * WIDTH)
+                    bounding_box.append(boxes[0][box_idx][2] * HEIGHT)
+                    bounding_box.append(boxes[0][box_idx][3] * WIDTH)
 
-                dif_y = bounding_box[2] - bounding_box[0]
-                dif_x = bounding_box[3] - bounding_box[1]
+                    dif_y = bounding_box[2] - bounding_box[0]
+                    dif_x = bounding_box[3] - bounding_box[1]
 
-                # Draw point halfway down the image in the center of the box
-                mid_y = bounding_box[0] + (dif_y/2)
-                mid_x = bounding_box[1] + (dif_x/2)
-                # Calc area
-                area = dif_x * dif_y
+                    # Draw point halfway down the image in the center of the box
+                    mid_y = bounding_box[0] + (dif_y/2)
+                    mid_x = bounding_box[1] + (dif_x/2)
+                    # Calc area
+                    area = dif_x * dif_y
 
-                # Draw the mid point
-                cv2.circle(img_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
+                    # Draw the mid point
+                    cv2.circle(img_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
 
-                reg_total_area_dict, reg_bbox_area_dict, total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
+                    reg_total_area_dict, reg_bbox_area_dict, total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
 
-                if total_percent_area <= 0.70:
-                    print("Total percent of REG1: %s " % reg_total_area_dict['reg1'] )
-                    print("Total percent of area in REG1: %s " % reg_bbox_area_dict['reg1'] )
-                    print("Total percent of REG2: %s " % reg_total_area_dict['reg2'] )
-                    print("Total percent of area in REG2: %s " % reg_bbox_area_dict['reg2'] )
-                    print("Total percent of REG3: %s " % reg_total_area_dict['reg3'] )
-                    print("Total percent of area in REG2: %s " % reg_bbox_area_dict['reg3'] )
-
-                    # Ensure that the change thats occured is big enough
-                    if abs(reg_bbox_area_dict['reg1'] - old_reg_bbox_area[array_idx]['reg1']) > 0.10:
-                        if reg_bbox_area_dict['reg1'] > old_reg_bbox_area[array_idx]['reg1']:
-                            xbee.write(b'1b\n')
-                            print('Brigher 1')
-                        elif reg_bbox_area_dict['reg1'] < old_reg_bbox_area[array_idx]['reg1']:
-                            xbee.write(b'1v\n')
-                            print('Dimmer 1')
-
-                    if abs(reg_bbox_area_dict['reg2'] - old_reg_bbox_area[array_idx]['reg2']) > 0.10:
-                        if reg_bbox_area_dict['reg2'] > old_reg_bbox_area[array_idx]['reg2']:
-                            xbee.write(b'2b\n')
-                            print('Brigher 2')
-                        elif reg_bbox_area_dict['reg2'] < old_reg_bbox_area[array_idx]['reg2']:
-                            xbee.write(b'2v\n')
-                            print('Dimmer 2')
-
-                    if abs(reg_bbox_area_dict['reg3'] - old_reg_bbox_area[array_idx]['reg3']) > 0.10:
-                        if reg_bbox_area_dict['reg3'] > old_reg_bbox_area[array_idx]['reg3']:
-                            xbee.write(b'3b\n')
-                            print('Brigher 3')
-                        elif reg_bbox_area_dict['reg3'] < old_reg_bbox_area[array_idx]['reg3']:
-                            xbee.write(b'3v\n')
-                            print('Dimmer 3')
-                    try:
-                        old_reg_bbox_area[array_idx] = reg_bbox_area_dict
-                    except IndexError:
-                        old_reg_bbox_area.append({})
-                        old_reg_bbox_area[array_idx] = reg_bbox_area_dict
-
-                    # Assume 1 to 1 indx to person
-                    # If is positive, person is moving to their left
-                    # If is negative, person is moving to their right
-                    mid_diff_x,  old_mid_x = get_dif(mid_x, mid_diff_x, old_mid_x, array_idx)
-
-                    # If is positive, this means that y is decreasing aka moving up in the frame.
-                    # If is negative, this means that y is increasing aka moving down in the frame.
-                    mid_diff_y,  old_mid_y = get_dif(mid_y, mid_diff_y, old_mid_y, array_idx)
-
-                    # If is positive, this means that area is decreasing aka moving backwards  in the frame.
-                    # If is negative, this means that area is increasing aka moving forwardin the frame.
-                    diff_area, old_area = get_dif(area, diff_area, old_area, array_idx)
+                    # print("Total percent of REG1: %s " % reg_total_area_dict['reg1'] )
+                    # print("Total percent of area in REG1: %s " % reg_bbox_area_dict['reg1'] )
+                    # print("Total percent of REG2: %s " % reg_total_area_dict['reg2'] )
+                    # print("Total percent of area in REG2: %s " % reg_bbox_area_dict['reg2'] )
+                    # print("Total percent of REG3: %s " % reg_total_area_dict['reg3'] )
+                    # print("Total percent of area in REG2: %s " % reg_bbox_area_dict['reg3'] )
 
                     try:
-                        # If positive and box area is shrinking, means (often) moving back into the distance
-                        if mid_diff_y[array_idx] > 0 and diff_area[array_idx] > 0:
-                            if mid_diff_x[array_idx] > 0:
-                                # Backward Left
-                                cur_dir[0] = 1
-                                cur_dir[1] = 1
-                            elif mid_diff_x[array_idx] < 0:
-                                # Backward Right
-                                cur_dir[0] = 1
-                                cur_dir[1] = 0
-                        # If negative and area is increasing, means (often) moving towards the camera
-                        elif mid_diff_y[array_idx] < 0 and diff_area[array_idx] < 0:
-                            if mid_diff_x[array_idx] > 0:
-                                # Forward Right
-                                cur_dir[0] = 0
-                                cur_dir[1] = 1
-                            elif mid_diff_x[array_idx] < 0:
-                                # Forward Left
-                                cur_dir[0] = 0
-                                cur_dir[1] = 0
-                        # Send a null set if nothing changed
-                        else:
-                            cur_dir[0] = 2
-                            cur_dir[1] = 2
+                        temp = old_reg_bbox_area[array_idx]['reg1']
                     except IndexError:
-                        continue
+                        old_reg_bbox_area.append({'reg1': 0, 'reg2': 0, 'reg3': 0})
+                    # TODO condense this down?
+                    # Ensure theres activity in the ROI
+                    if reg_bbox_area_dict['reg1'] != 0:
+                        # Double Check that the light is on
+                        if lights['light1'] == False:
+                            xbee.write(b'1n\n')
+                            lights['light1'] = True
+                        # If its on, adjust the brightness up or down depending on if there was a change
+                        elif lights['light1'] == True:
+                            # Ensure that the change thats occured is big enough
+                            if abs(reg_bbox_area_dict['reg1'] - old_reg_bbox_area[array_idx]['reg1']) > 0.025:
+                                if reg_bbox_area_dict['reg1'] > old_reg_bbox_area[array_idx]['reg1']:
+                                    xbee.write(b'1b\n')
+                                    # print('Brigher 1')
+                                elif reg_bbox_area_dict['reg1'] < old_reg_bbox_area[array_idx]['reg1']:
+                                    xbee.write(b'1v\n')
+                                    # print('Dimmer 1')
 
-                    if cur_dir[0] != 2 or cur_dir[1] != 2:
+                    elif lights['light1'] == True and reg_bbox_area_dict['reg1'] == 0:
+                        xbee.write(b'1o\n')
+                        lights['light1'] = False
+
+                    # Ensure theres activity in the ROI
+                    if reg_bbox_area_dict['reg2'] != 0:
+                        # Double Check that the light is on
+                        if lights['light2'] == False:
+                            xbee.write(b'2n\n')
+                            lights['light2'] = True
+                        # If its on, adjust the brightness up or down depending on if there was a change
+                        elif lights['light2'] == True:
+                            if abs(reg_bbox_area_dict['reg2'] - old_reg_bbox_area[array_idx]['reg2']) > 0.025:
+                                if reg_bbox_area_dict['reg2'] > old_reg_bbox_area[array_idx]['reg2']:
+                                    xbee.write(b'2b\n')
+                                    # print('Brigher 2')
+                                elif reg_bbox_area_dict['reg2'] < old_reg_bbox_area[array_idx]['reg2']:
+                                    xbee.write(b'2v\n')
+                                    # print('Dimmer 2')
+
+                    elif lights['light2'] == True and reg_bbox_area_dict['reg2'] == 0:
+                        xbee.write(b'2o\n')
+                        lights['light2'] = False
+
+                    # Ensure theres activity in the ROI
+                    if reg_bbox_area_dict['reg3'] != 0:
+                        # Double Check that the light is on
+                        if lights['light3'] == False:
+                            xbee.write(b'3n\n')
+                            lights['light3'] = True
+                        # If its on, adjust the brightness up or down depending on if there was a change
+                        elif lights['light3'] == True:
+
+                            if abs(reg_bbox_area_dict['reg3'] - old_reg_bbox_area[array_idx]['reg3']) > 0.025:
+                                if reg_bbox_area_dict['reg3'] > old_reg_bbox_area[array_idx]['reg3']:
+                                    xbee.write(b'3b\n')
+                                    # print('Brigher 3')
+                                elif reg_bbox_area_dict['reg3'] < old_reg_bbox_area[array_idx]['reg3']:
+                                    xbee.write(b'3v\n')
+                                    # print('Dimmer 3')
+
+                    elif lights['light3'] == True and reg_bbox_area_dict['reg3'] == 0:
+                        xbee.write(b'3o\n')
+                        lights['light3'] = False
+
+                    old_reg_bbox_area[array_idx] = reg_bbox_area_dict
+
+                    if reg_total_area_dict['reg1'] >= 0.75 or reg_total_area_dict['reg2'] >= 0.75 or reg_total_area_dict['reg3'] >= 0.75:
                         try:
-                            direction[array_idx].pop(0)
+                            dist[array_idx] = 0
                         except IndexError:
-                            direction.append([ FWD, FWD, FWD, FWD, FWD])
-                            direction[array_idx].pop(0)
+                            continue
 
-                        if cur_dir[0] == 0:
-                            direction[array_idx].append(FWD)
-                            # if cur_dir[1] == 0:
-                            #     print('Forward Left')
-                            # elif cur_dir[1] == 1:
-                            #     print('Forward Right')
-                        elif cur_dir[0] == 1:
-                            direction[array_idx].append(BAK)
-                            # if cur_dir[1] == 0:
-                            #     print('Backward Left')
-                            # elif cur_dir[1] == 1:
-                            #     print('Backward Right')
+                    if total_percent_area <= 0.70:
+                        # Assume 1 to 1 indx to person
+                        # If is positive, person is moving to their left
+                        # If is negative, person is moving to their right
+                        mid_diff_x,  old_mid_x = get_dif(mid_x, mid_diff_x, old_mid_x, array_idx)
 
-                    avg_dir = np.mean(direction[array_idx])
-                    if avg_dir > 0.5:
-                        print("Backward")
-                    elif avg_dir < 0.5:
-                        print("Forward")
+                        # If is positive, this means that y is decreasing aka moving up in the frame.
+                        # If is negative, this means that y is increasing aka moving down in the frame.
+                        mid_diff_y,  old_mid_y = get_dif(mid_y, mid_diff_y, old_mid_y, array_idx)
 
-                array_idx += 1
+                        # If is positive, this means that area is decreasing aka moving backwards  in the frame.
+                        # If is negative, this means that area is increasing aka moving forwardin the frame.
+                        diff_area, old_area = get_dif(area, diff_area, old_area, array_idx)
+
+                        try:
+                            # If positive and box area is shrinking, means (often) moving back into the distance
+                            if mid_diff_y[array_idx] > Y_THRESHOLD and diff_area[array_idx] > AREA_THRESHOLD:
+                                cur_dir[0] = 1
+                            # If negative and area is increasing, means (often) moving towards the camera
+                            elif mid_diff_y[array_idx] < -Y_THRESHOLD and diff_area[array_idx] < -AREA_THRESHOLD:
+                                    cur_dir[0] = 0
+                            # Send a null set if nothing changed
+                            else:
+                                cur_dir[0] = None
+
+                            if mid_diff_x[array_idx] > X_THRESHOLD and diff_area[array_idx] < AREA_THRESHOLD:
+                                cur_dir[1] = 1
+                            elif mid_diff_x[array_idx] < -X_THRESHOLD and diff_area[array_idx] > -AREA_THRESHOLD:
+                                cur_dir[1] = 0
+                            else:
+                                cur_dir[1] = None
+
+                        except IndexError:
+                            continue
+
+                        if cur_dir[1] != None:
+                            try:
+                                if cur_dir[1] == 0:
+                                    direction[array_idx].append(LFT)
+                                elif cur_dir[1] == 1:
+                                    direction[array_idx].append(RGT)
+                                direction[array_idx].pop(0)
+                                avg_direction = np.mean(direction[array_idx])
+                            except IndexError:
+                                direction.append([ LFT, LFT, LFT])
+                                direction[array_idx].pop(0)
+                                avg_direction = np.mean(direction[array_idx])
+
+                            if avg_direction > 0.5:
+                                print("Person %s: Right" % (array_idx))
+                            elif avg_direction < 0.5:
+                                print("Person %s: Left" % (array_idx))
+
+                        if cur_dir[0] != None:
+                            try:
+                                if cur_dir[0] == 0:
+                                    depth[array_idx].append(FWD)
+                                elif cur_dir[0] == 1:
+                                    depth[array_idx].append(BAK)
+                                depth[array_idx].pop(0)
+                                avg_depth = np.mean(depth[array_idx])
+                            except IndexError:
+                                depth.append([ FWD, FWD, FWD])
+                                depth[array_idx].pop(0)
+                                avg_depth = np.mean(depth[array_idx])
+
+                            if avg_depth > 0.5:
+                                print("Person %s: Backward" % (array_idx))
+                                try:
+                                    dist[array_idx] += 1
+                                except IndexError:
+                                    dist.append(0)
+                                    dist[array_idx] += 1
+                                print(dist)
+                            elif avg_depth < 0.5:
+                                print("Person %s: Forward" % (array_idx))
+                                try:
+                                    if dist[array_idx] != 0:
+                                        dist[array_idx] -= 1
+                                except IndexError:
+                                    dist.append(0)
+                                    if dist[array_idx] != 0:
+                                        dist[array_idx] -= 1
+                                print(dist)
+
+                    array_idx += 1
+
+            else:
+                delay_counter += 1
+
+            if delay_counter == TIME_OUT:
+                xbee.write(b'0o')
+                delay_counter = 0
+                lights = { 'light1': False, 'light2': False, 'light3': False}
 
             cv2.imshow("img", img_brg)
         else:
