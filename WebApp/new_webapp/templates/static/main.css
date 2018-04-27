@@ -1,66 +1,104 @@
 @import url(//fonts.googleapis.com/css?family=Open+Sans);
 
 body {
-    background-color: #DCDCDC;
+    background-color: #b2abb5;
 }
 
 .text-container {
   font-family: 'Open Sans', sans-serif;
   font-size: 16px;
   margin: auto;
-  width: 50%;
+  width: 33%;
   line-height: 24px;
   padding: 50px;
   align-items: center;
 }
 
-.button {
-     background-color: #2d95e5;
-     margin: 10px 10px;
-     display: block;
-     padding: 15px 15px;
-     border-radius: 10px;
-     -moz-border-radius: 10px;
-     -webkit-border-radius: 10px;
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: stretch;
+}
 
-     text-align: center;
-     font-family: 'Open Sans', sans-serif;
-     color: white;
+.button-container {
+  font-family: 'Open Sans', sans-serif;
+  margin: 1% 10%;
+  width: 80%;
+  height: 150px;
+  padding: 10px;
+  align-items: center;
+  border-radius: 6px;
+  border: 6px solid #33ff42;
+  align-content: flex-end;
+  -webkit-flex-wrap: wrap;
+}
+
+.button {
+  background-color: #FF3368;
+  margin: 1.1%;
+  display: block;
+  padding: 15px 15px;
+  border-radius: 10px;
+  -moz-border-radius: 10px;
+  -webkit-border-radius: 5px;
+  text-align: center;
+  font-family: 'Open Sans', sans-serif;
+  color: white;
+  width: 27.5%;
  }
+
  .button:hover {
-     background-color: #ea839e;
+     background-color: #33ff42;
      color: white;
  }
+
+.big-btn:hover{
+  background-color: #33ff42;
+  color: white;
+}
 
  .big-btn {
-  padding: 30px 50px;
-  font-size: 25px
+   background-color: #2d95e5;
+   margin: 10px 10px;
+   display: block;
+   padding: 15px 15px;
+   border-radius: 10px;
+   -moz-border-radius: 10px;
+   -webkit-border-radius: 10px;
+   text-align: center;
+   font-family: 'Open Sans', sans-serif;
+   color: white;
+   width: 95%;
  }
 
  .control-container {
-  font-family: 'Open Sans', sans-serif;
-  margin: auto;
-  width: 100%;
-  align-items: center;
+   font-family: 'Open Sans', sans-serif;
+   margin: auto;
+   width: 60%;
+   height: 250px;
+   padding: 10px;
+   align-items: center;
+   border-radius: 6px;
+   border: 6px solid #33f0ff;
  }
 
  .slide-container {
-    align-self: flex-end;
-    height: 100%; /* Width of the outside container */
-    width: 33%;
-    font-family: 'Open Sans', sans-serif;
-    font-size: 16px;
-    padding: auto;
-    margin: auto;
-    float: left;
-     /* background: blue; */
+   align-self: flex-end;
+   height: 33%;
+   width: 100%;
+   font-family: 'Open Sans', sans-serif;
+   font-size: 16px;
+   padding: auto;
+   margin: auto;
+   float: left;
+   display: block;
  }
 
  /* The slider itself */
  .slider {
      -webkit-appearance: none;  /* Override default CSS styles */
      appearance: none;
-     transform: rotate(270deg);
+     transform: none;
      width: 100%; /* Full-width */
      height: 100%; /* Specified height */
      background: #FFFFFF; /* Grey background */
@@ -69,6 +107,7 @@ body {
      opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
      -webkit-transition: .2s; /* 0.2 seconds transition on hover */
      transition: opacity .2s;
+     display: block;
  }
 
  /* Mouse-over effects */

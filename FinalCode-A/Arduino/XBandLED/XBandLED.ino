@@ -162,76 +162,77 @@ char data[2] = {0x0, 0x0};
 
 // the loop routine runs over and over again forever:
 void loop() {
-   
+
   //Serial.print("loop"); // see if it gets in loop
   while(Serial.available() > 0){
-    Serial.readBytesUntil('\n', data, 2);
+    Serial.readBytesUntil('\n', data, 3); // "0b1" for example
     Serial.print(data[1]);
   }
   if(data[0] == 0x30 or data[0] == 0x31){
-    switch(data[1]){
-      case 'o':    // off
-        I2CWRITE6BYTES(ADDRESS, INTENSITY_RGB, 0X000, 0X000, 0X000);
-        break;
-      case 'n':    // on
-        I2CWRITE6BYTES(ADDRESS, INTENSITY_RGB, 0X400, 0X400, 0X000);
-        I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0XFFF);
-        break;
-      case 'w':    // more warm (RED)
-        r = I2CREAD(ADDRESS, READ_INTENSITY_RED);
-        g = I2CREAD(ADDRESS, READ_INTENSITY_GREEN);
-        if(r != 0xFFF){
-          r += 0x400;
-          if(r > 0xFFF){
-            r = 0xFFF;
-          }
-        }else{
-          g -= 0x400;
-          if(g < 0){
-            g = 0;
-          }
+    switch(data[2]){
+      case '0':
+        if(data[1] == 'o'){           /* on */
+          I2CWRITE6BYTES(ADDRESS, INTENSITY_RGB, 0X400, 0X400, 0X000);
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0XFFF);
         }
-        I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, r);
-        I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, g);
-        delay(100);
-        break;
-      case 'c':    // more cool (GREEN)
-        r = I2CREAD(ADDRESS, READ_INTENSITY_RED);
-        g = I2CREAD(ADDRESS, READ_INTENSITY_GREEN);
-        if(g != 0xFFF){
-          g += 0x400;
-          if(g > 0xFFF){
-            g = 0xFFF;
-          }
-        }else{
-          r -= 0x400;
-          if(r < 0){
-            r = 0;
-          }
+        else if (data[1] == 'f'){     /* off */
+          I2CWRITE6BYTES(ADDRESS, INTENSITY_RGB, 0X000, 0X000, 0X000);
         }
-        I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, r);
-        I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, g);
-        delay(100);
         break;
-      case 'b':    // inc brightness
-        if(brightness != 0xFFF){
-          brightness += 0x100;
-          if(brightness > 0xFFF){
-            brightness = 0xFFF;
-          }
+      case '1':
+        if(data[1] == 'b'){
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0x333);
         }
-        I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, brightness);
-        break;
-      case 'v':    // dec brightness
-        if(brightness != 0x0){
-          brightness -= 0x100;
-          if(brightness < 0){
-            brightness = 0;
-          }
+        else if (data[1] == 'w'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0x333);
         }
-        I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, brightness);
+        else if (data[1] == 'c'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, 0x333);
+        }
         break;
-      default:     // stay the same?
+      case '2':
+        if(data[1] == 'b'){
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0x666);
+        }
+        else if (data[1] == 'w'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0x666);
+        }
+        else if (data[1] == 'c'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, 0x666);
+        }
+        break;
+      case '3':
+        if(data[1] == 'b'){
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0x999);
+        }
+        else if (data[1] == 'w'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0x999);
+        }
+        else if (data[1] == 'c'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0x999);
+        }
+        break;
+      case '4':
+        if(data[1] == 'b'){
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0xCCC);
+        }
+        else if (data[1] == 'w'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0xCCC);
+        }
+        else if (data[1] == 'c'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, 0xCCC);
+        }
+        break;
+      case '5':
+        if(data[1] == 'b'){
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0xFFF);
+        }
+        else if (data[1] == 'w'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0xFFF);
+        }
+        else if (data[1] == 'c'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, 0xFFF);
+        }
         break;
     }
     data[0] = 0;

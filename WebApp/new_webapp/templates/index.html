@@ -21,9 +21,12 @@
 </head>
 <body>
   <div class="text-container">
-    <h1>Button to control the lights!</h1>
+    <center>
+      <h1>LED-Lux Control!</h1>
+      <h2>Master Control</h2>
+    </center>
   </div>
-  <div class="container">
+  <div class="control-container">
     <div class="slide-container" >
       <form class="slide-container">
         <p>
@@ -50,6 +53,16 @@
           <output for="brightness" id="brightness-level-all">{{ form.brightness.data }}</output>
         </p>
       </form>
+    </div>
+  </div>
+  <div class="button-container">
+    <div class="flex-container">
+      <a class="big-btn">MASTER</a>
+    </div>
+    <div class="flex-container">
+      <a class="button">L1</a>
+      <a class="button">L2</a>
+      <a class="button">L3</a>
     </div>
   </div>
 </body>
