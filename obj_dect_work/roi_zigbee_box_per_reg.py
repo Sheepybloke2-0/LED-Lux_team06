@@ -48,6 +48,12 @@ WIDTH  = 1280
 
 # Count the number of people
 TIME_OUT = 25
+BOOK_RECOG_THRESHOLD = 25
+book_in_frame = False
+light_changed_book = False
+TV_RECOG_THRESHOLD = 25
+tv_in_frame = False
+light_changed_tv = False
 lights = { 'light1': False, 'light2': False, 'light3': False}
 
 # Directional Constants
@@ -271,11 +277,15 @@ if __name__ == '__main__':
     # TODO move to top?
 
     print("Quick XBee test")
-    xbee.write(b'0n')
+    xbee.write(b'0o0\n')
+    time.sleep(2)
+    xbee.write(b'0b1')
     time.sleep(5)
-    xbee.write(b'0o')
+    xbee.write(b'0f0\n')
 
     delay_counter = 0
+    book_under_recog_frames = 0
+    tv_under_recog_frames = 0
     old_mid_x = [0]
     old_mid_y = [0]
     old_area = [0]
@@ -301,10 +311,17 @@ if __name__ == '__main__':
             classes_index = np.nditer(classes, flags=['f_index'])
             found_obj = []
             person_idx = []
+            tv_in_frame = False
+            book_in_frame = False
             for id in classes_index:
                 current_index = classes_index.index
-                # if id == 72:
-                #     print(scores[0][current_index])
+                if id == 84 and scores[0][current_index] > 0.25 and book_under_recog_frames <= BOOK_RECOG_THRESHOLD: #book
+                    book_under_recog_frames += 1
+                    book_in_frame = True
+                elif id == 72 and scores[0][current_index] > 0.25 and tv_under_recog_frames <= TV_RECOG_THRESHOLD: #tv
+                    tv_under_recog_frames += 1
+                    tv_in_frame = True
+
                 # There's almost always a 1, just very low probablility. Ensure i is greater than 50%
                 if scores[0][current_index] > 0.50:
                     # Add all found objects to a List
@@ -318,7 +335,8 @@ if __name__ == '__main__':
             cv2.rectangle(img_brg, region1_start, region1_end, (125, 0, 125), 2)
             cv2.rectangle(img_brg, region2_start, region2_end, (125, 0, 125), 2)
             cv2.rectangle(img_brg, region3_start, region3_end, (125, 0, 125), 2)
-            cv2.rectangle(img_brg, region_dist_start, region_dist_end, (125, 0, 125), 2)
+            # Depth rectangle to show depth
+            # cv2.rectangle(img_brg, region_dist_start, region_dist_end, (125, 0, 125), 2)
 
             # If there is person found, do some checking to get their location and turn on the proper lights
             if 1 in found_obj:
@@ -329,6 +347,8 @@ if __name__ == '__main__':
                 # Forward = 0,0; backward = 0,1; left = 1,0; right = 1,1; respectively
                 cur_dir = [0, 0]
                 array_idx = 0
+                lights = { 'light1': False, 'light2': False, 'light3': False}
+
                 for box_idx in person_idx:
                     # TODO: Break into a function and multiplex?
                     bounding_box = []
@@ -362,69 +382,64 @@ if __name__ == '__main__':
                         temp = old_reg_bbox_area[array_idx]['reg1']
                     except IndexError:
                         old_reg_bbox_area.append({'reg1': 0, 'reg2': 0, 'reg3': 0})
+
                     # TODO condense this down?
                     # Ensure theres activity in the ROI
                     if reg_bbox_area_dict['reg1'] != 0:
                         # Double Check that the light is on
                         if lights['light1'] == False:
-                            xbee.write(b'1n\n')
                             lights['light1'] = True
                         # If its on, adjust the brightness up or down depending on if there was a change
-                        elif lights['light1'] == True:
-                            # Ensure that the change thats occured is big enough
-                            if abs(reg_bbox_area_dict['reg1'] - old_reg_bbox_area[array_idx]['reg1']) > 0.025:
-                                if reg_bbox_area_dict['reg1'] > old_reg_bbox_area[array_idx]['reg1']:
-                                    xbee.write(b'1b\n')
-                                    # print('Brigher 1')
-                                elif reg_bbox_area_dict['reg1'] < old_reg_bbox_area[array_idx]['reg1']:
-                                    xbee.write(b'1v\n')
-                                    # print('Dimmer 1')
+                        # elif lights['light1'] == True:
+                        #     # Ensure that the change thats occured is big enough
+                        #     if abs(reg_bbox_area_dict['reg1'] - old_reg_bbox_area[array_idx]['reg1']) > 0.025:
+                        #         if reg_bbox_area_dict['reg1'] > old_reg_bbox_area[array_idx]['reg1']:
+                        #             xbee.write(b'1b\n')
+                        #             # print('Brigher 1')
+                        #         elif reg_bbox_area_dict['reg1'] < old_reg_bbox_area[array_idx]['reg1']:
+                        #             xbee.write(b'1v\n')
+                        #             # print('Dimmer 1')
 
-                    elif lights['light1'] == True and reg_bbox_area_dict['reg1'] == 0:
-                        xbee.write(b'1o\n')
-                        lights['light1'] = False
+                    # elif lights['light1'] == True and reg_bbox_area_dict['reg1'] == 0:
+                    #     lights['light1'] = False
 
                     # Ensure theres activity in the ROI
                     if reg_bbox_area_dict['reg2'] != 0:
                         # Double Check that the light is on
                         if lights['light2'] == False:
-                            xbee.write(b'2n\n')
                             lights['light2'] = True
                         # If its on, adjust the brightness up or down depending on if there was a change
-                        elif lights['light2'] == True:
-                            if abs(reg_bbox_area_dict['reg2'] - old_reg_bbox_area[array_idx]['reg2']) > 0.025:
-                                if reg_bbox_area_dict['reg2'] > old_reg_bbox_area[array_idx]['reg2']:
-                                    xbee.write(b'2b\n')
-                                    # print('Brigher 2')
-                                elif reg_bbox_area_dict['reg2'] < old_reg_bbox_area[array_idx]['reg2']:
-                                    xbee.write(b'2v\n')
-                                    # print('Dimmer 2')
+                        # elif lights['light2'] == True:
+                        #     if abs(reg_bbox_area_dict['reg2'] - old_reg_bbox_area[array_idx]['reg2']) > 0.025:
+                        #         if reg_bbox_area_dict['reg2'] > old_reg_bbox_area[array_idx]['reg2']:
+                        #             xbee.write(b'2b\n')
+                        #             # print('Brigher 2')
+                        #         elif reg_bbox_area_dict['reg2'] < old_reg_bbox_area[array_idx]['reg2']:
+                        #             xbee.write(b'2v\n')
+                        #             # print('Dimmer 2')
 
-                    elif lights['light2'] == True and reg_bbox_area_dict['reg2'] == 0:
-                        xbee.write(b'2o\n')
-                        lights['light2'] = False
+                    # elif lights['light2'] == True and reg_bbox_area_dict['reg2'] == 0:
+                    #     lights['light2'] = False
 
                     # Ensure theres activity in the ROI
                     if reg_bbox_area_dict['reg3'] != 0:
                         # Double Check that the light is on
                         if lights['light3'] == False:
-                            xbee.write(b'3n\n')
                             lights['light3'] = True
                         # If its on, adjust the brightness up or down depending on if there was a change
-                        elif lights['light3'] == True:
+                        # elif lights['light3'] == True:
+                        #
+                        #     if abs(reg_bbox_area_dict['reg3'] - old_reg_bbox_area[array_idx]['reg3']) > 0.025:
+                        #         if reg_bbox_area_dict['reg3'] > old_reg_bbox_area[array_idx]['reg3']:
+                        #             xbee.write(b'3b\n')
+                        #             # print('Brigher 3')
+                        #         elif reg_bbox_area_dict['reg3'] < old_reg_bbox_area[array_idx]['reg3']:
+                        #             xbee.write(b'3v\n')
+                        #             # print('Dimmer 3')
 
-                            if abs(reg_bbox_area_dict['reg3'] - old_reg_bbox_area[array_idx]['reg3']) > 0.025:
-                                if reg_bbox_area_dict['reg3'] > old_reg_bbox_area[array_idx]['reg3']:
-                                    xbee.write(b'3b\n')
-                                    # print('Brigher 3')
-                                elif reg_bbox_area_dict['reg3'] < old_reg_bbox_area[array_idx]['reg3']:
-                                    xbee.write(b'3v\n')
-                                    # print('Dimmer 3')
-
-                    elif lights['light3'] == True and reg_bbox_area_dict['reg3'] == 0:
-                        xbee.write(b'3o\n')
-                        lights['light3'] = False
-
+                    # elif lights['light3'] == True and reg_bbox_area_dict['reg3'] == 0:
+                    #     lights['light3'] = False
+                    #
                     old_reg_bbox_area[array_idx] = reg_bbox_area_dict
 
                     if reg_total_area_dict['reg1'] >= 0.75 or reg_total_area_dict['reg2'] >= 0.75 or reg_total_area_dict['reg3'] >= 0.75:
@@ -478,6 +493,12 @@ if __name__ == '__main__':
                                 avg_direction = np.mean(direction[array_idx])
                             except IndexError:
                                 direction.append([ LFT, LFT, LFT])
+                                print(array_idx)
+                                print(direction)
+                                if cur_dir[1] == 0:
+                                    direction[array_idx].append(LFT)
+                                elif cur_dir[1] == 1:
+                                    direction[array_idx].append(RGT)
                                 direction[array_idx].pop(0)
                                 avg_direction = np.mean(direction[array_idx])
 
@@ -496,40 +517,94 @@ if __name__ == '__main__':
                                 avg_depth = np.mean(depth[array_idx])
                             except IndexError:
                                 depth.append([ FWD, FWD, FWD])
+                                if cur_dir[0] == 0:
+                                    depth[array_idx].append(FWD)
+                                elif cur_dir[0] == 1:
+                                    depth[array_idx].append(BAK)
                                 depth[array_idx].pop(0)
                                 avg_depth = np.mean(depth[array_idx])
 
+                            # This sort of distance tracking works decent for a single person, but breaks down with more
                             if avg_depth > 0.5:
                                 print("Person %s: Backward" % (array_idx))
-                                try:
-                                    dist[array_idx] += 1
-                                except IndexError:
-                                    dist.append(0)
-                                    dist[array_idx] += 1
-                                print(dist)
+                                # try:
+                                #     dist[array_idx] += 1
+                                # except IndexError:
+                                #     dist.append(0)
+                                #     dist[array_idx] += 1
+                                # print(dist)
                             elif avg_depth < 0.5:
                                 print("Person %s: Forward" % (array_idx))
-                                try:
-                                    if dist[array_idx] != 0:
-                                        dist[array_idx] -= 1
-                                except IndexError:
-                                    dist.append(0)
-                                    if dist[array_idx] != 0:
-                                        dist[array_idx] -= 1
-                                print(dist)
+                                # try:
+                                #     if dist[array_idx] != 0:
+                                #         dist[array_idx] -= 1
+                                # except IndexError:
+                                #     dist.append(0)
+                                #     if dist[array_idx] != 0:
+                                #         dist[array_idx] -= 1
+                                # print(dist)
 
-                        if dist[array_idx] == 5 and bounding_box[1] <= mid_x <= bounding_box[3]:
-                            xbee.write(b'0o\n')
-                            lights = { 'light1': False, 'light2': False, 'light3': False}
-                            print("Person %s: In region!" % (array_idx))
+                        # if dist[array_idx] == 5 and bounding_box[1] <= mid_x <= bounding_box[3]:
+                        #     xbee.write(b'0o\n')
+                        #     lights = { 'light1': False, 'light2': False, 'light3': False}
+                        #     print("Person %s: In region!" % (array_idx))
 
                     array_idx += 1
 
             else:
                 delay_counter += 1
 
+            if 72 in found_obj:
+                if light_changed_tv == False:
+                    xbee.write(b'0b1')
+                    time.sleep(0.1)
+                    print("Changing Lights cause TV")
+                tv_under_recog_frames = 0
+                light_changed_tv = True
+            elif tv_in_frame != True:
+                tv_under_recog_frames += 1
+
+            if 84 in found_obj:
+                if light_changed_book == False:
+                    xbee.write(b'0c1')
+                    time.sleep(0.1)
+                    xbee.write(b'0w5')
+                    print("Changing Lights cause book")
+                book_under_recog_frames = 0
+                light_changed_book = True
+            elif book_in_frame != True:
+                book_under_recog_frames += 1
+
+            if book_under_recog_frames > BOOK_RECOG_THRESHOLD and book_in_frame == True:
+                print("Changing Lights cause no book")
+                xbee.write(b'0c4')
+                time.sleep(0.1)
+                xbee.write(b'0w4')
+                book_in_frame = False
+
+            if tv_under_recog_frames > TV_RECOG_THRESHOLD and tv_in_frame == True:
+                xbee.write(b'0b4')
+                time.sleep(0.1)
+                tv_in_frame = False
+                print("Changing Lights cause no TV")
+
+            if lights['light1'] == True:
+                xbee.write(b'1o0')
+            elif lights['light1'] == False:
+                xbee.write(b'1f0')
+
+            if lights['light2'] == True:
+                xbee.write(b'2o0')
+            elif lights['light2'] == False:
+                xbee.write(b'2f0')
+
+            if lights['light3'] == True:
+                xbee.write(b'3o0')
+            elif lights['light3'] == False:
+                xbee.write(b'3f0')
+
             if delay_counter == TIME_OUT:
-                xbee.write(b'0o\n')
+                xbee.write(b'0f0')
                 delay_counter = 0
                 lights = { 'light1': False, 'light2': False, 'light3': False}
 
@@ -543,6 +618,7 @@ if __name__ == '__main__':
             break
 
     cv2.destroyAllWindows()
-    xbee.write(b'0o\n')
+    xbee.write(b'0f0\n')
+    time.sleep(1)
     webcam.stop()
     pool.terminate()
