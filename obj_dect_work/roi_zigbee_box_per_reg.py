@@ -50,8 +50,10 @@ WIDTH  = 1280
 TIME_OUT = 25
 BOOK_RECOG_THRESHOLD = 25
 book_in_frame = False
+light_changed_book = False
 TV_RECOG_THRESHOLD = 25
 tv_in_frame = False
+light_changed_tv = False
 lights = { 'light1': False, 'light2': False, 'light3': False}
 
 # Directional Constants
@@ -275,9 +277,11 @@ if __name__ == '__main__':
     # TODO move to top?
 
     print("Quick XBee test")
-    xbee.write(b'0n')
+    xbee.write(b'0o0\n')
+    time.sleep(2)
+    xbee.write(b'0b1')
     time.sleep(5)
-    xbee.write(b'0o')
+    xbee.write(b'0f0\n')
 
     delay_counter = 0
     book_under_recog_frames = 0
@@ -307,12 +311,17 @@ if __name__ == '__main__':
             classes_index = np.nditer(classes, flags=['f_index'])
             found_obj = []
             person_idx = []
+            tv_in_frame = False
+            book_in_frame = False
             for id in classes_index:
                 current_index = classes_index.index
                 if id == 84 and scores[0][current_index] > 0.25 and book_under_recog_frames <= BOOK_RECOG_THRESHOLD: #book
                     book_under_recog_frames += 1
-                if id == 72 and scores[0][current_index] > 0.25 and tv_under_recog_frames <= TV_RECOG_THRESHOLD: #tv
+                    book_in_frame = True
+                elif id == 72 and scores[0][current_index] > 0.25 and tv_under_recog_frames <= TV_RECOG_THRESHOLD: #tv
                     tv_under_recog_frames += 1
+                    tv_in_frame = True
+
                 # There's almost always a 1, just very low probablility. Ensure i is greater than 50%
                 if scores[0][current_index] > 0.50:
                     # Add all found objects to a List
@@ -484,6 +493,8 @@ if __name__ == '__main__':
                                 avg_direction = np.mean(direction[array_idx])
                             except IndexError:
                                 direction.append([ LFT, LFT, LFT])
+                                print(array_idx)
+                                print(direction)
                                 if cur_dir[1] == 0:
                                     direction[array_idx].append(LFT)
                                 elif cur_dir[1] == 1:
@@ -544,50 +555,56 @@ if __name__ == '__main__':
                 delay_counter += 1
 
             if 72 in found_obj:
-                if tv_in_frame == False:
-                    for i in range(8):
-                        xbee.write(b'0v\n')
-                        time.sleep(0.05)
+                if light_changed_tv == False:
+                    xbee.write(b'0b1')
+                    time.sleep(0.1)
+                    print("Changing Lights cause TV")
                 tv_under_recog_frames = 0
-                tv_in_frame = True
+                light_changed_tv = True
+            elif tv_in_frame != True:
+                tv_under_recog_frames += 1
 
             if 84 in found_obj:
-                if book_in_frame == False:
-                    for i in range(8):
-                        xbee.write(b'0w\n')
-                        time.sleep(0.05)
+                if light_changed_book == False:
+                    xbee.write(b'0c1')
+                    time.sleep(0.1)
+                    xbee.write(b'0w5')
+                    print("Changing Lights cause book")
                 book_under_recog_frames = 0
-                book_in_frame = True
+                light_changed_book = True
+            elif book_in_frame != True:
+                book_under_recog_frames += 1
 
             if book_under_recog_frames > BOOK_RECOG_THRESHOLD and book_in_frame == True:
-                for i in range(8):
-                    xbee.write(b'0c\n')
-                    time.sleep(0.05)
+                print("Changing Lights cause no book")
+                xbee.write(b'0c4')
+                time.sleep(0.1)
+                xbee.write(b'0w4')
                 book_in_frame = False
 
             if tv_under_recog_frames > TV_RECOG_THRESHOLD and tv_in_frame == True:
-                for i in range(8):
-                    xbee.write(b'0b\n')
-                    time.sleep(0.05)
+                xbee.write(b'0b4')
+                time.sleep(0.1)
                 tv_in_frame = False
+                print("Changing Lights cause no TV")
 
             if lights['light1'] == True:
-                xbee.write(b'1n\n')
+                xbee.write(b'1o0')
             elif lights['light1'] == False:
-                xbee.write(b'1o\n')
+                xbee.write(b'1f0')
 
             if lights['light2'] == True:
-                xbee.write(b'2n\n')
+                xbee.write(b'2o0')
             elif lights['light2'] == False:
-                xbee.write(b'2o\n')
+                xbee.write(b'2f0')
 
             if lights['light3'] == True:
-                xbee.write(b'3n\n')
+                xbee.write(b'3o0')
             elif lights['light3'] == False:
-                xbee.write(b'3o\n')
+                xbee.write(b'3f0')
 
             if delay_counter == TIME_OUT:
-                xbee.write(b'0o\n')
+                xbee.write(b'0f0')
                 delay_counter = 0
                 lights = { 'light1': False, 'light2': False, 'light3': False}
 
@@ -601,6 +618,7 @@ if __name__ == '__main__':
             break
 
     cv2.destroyAllWindows()
-    xbee.write(b'0o\n')
+    xbee.write(b'0f0\n')
+    time.sleep(1)
     webcam.stop()
     pool.terminate()
