@@ -168,6 +168,7 @@ void loop() {
     Serial.readBytesUntil('\n', data, 3); // "0b1" for example
     Serial.print(data[1]);
   }
+  
   if(data[0] == 0x30 or data[0] == 0x31){
     switch(data[2]){
       case '0':
