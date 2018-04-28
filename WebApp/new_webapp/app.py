@@ -57,15 +57,15 @@ def L3():
 def brightness():
     if (form.brightness.data == 0):
         send_mode_change("0b0")
-    else if (form.brightness.data == 1):
+    elif (form.brightness.data == 1):
         send_mode_change("0b1")
-    else if (form.brightness.data == 2):
+    elif (form.brightness.data == 2):
         send_mode_change("0b2")
-    else if (form.brightness.data == 3):
+    elif (form.brightness.data == 3):
         send_mode_change("0b3")
-    else if (form.brightness.data == 4):
+    elif (form.brightness.data == 4):
         send_mode_change("0b4")
-    else if (form.brightness.data == 5):
+    elif (form.brightness.data == 5):
         send_mode_change("0b5")
     return '', 204
 
@@ -74,15 +74,15 @@ def brightness():
 def warm(form.warm.data):
     if (form.warm.data == 0):
         send_mode_change("0w0")
-    else if (form.warm.data == 1):
+    elif (form.warm.data == 1):
         send_mode_change("0w1")
-    else if (form.warm.data == 2):
+    elif (form.warm.data == 2):
         send_mode_change("0w2")
-    else if (form.warm.data == 3):
+    elif (form.warm.data == 3):
         send_mode_change("0w3")
-    else if (form.warm.data == 4):
+    elif (form.warm.data == 4):
         send_mode_change("0w4")
-    else if (form.warm.data == 5):
+    elif (form.warm.data == 5):
         send_mode_change("0w5")
     return '', 204
 
@@ -90,15 +90,15 @@ def warm(form.warm.data):
 def cool():
     if (form.cool.data == 0):
         send_mode_change("0c0")
-    else if (form.cool.data == 1):
+    elif (form.cool.data == 1):
         send_mode_change("0c1")
-    else if (form.cool.data == 2):
+    elif (form.cool.data == 2):
         send_mode_change("0c2")
-    else if (form.cool.data == 3):
+    elif (form.cool.data == 3):
         send_mode_change("0c3")
-    else if (form.cool.data == 4):
+    elif (form.cool.data == 4):
         send_mode_change("0c4")
-    else if (form.cool.data == 5):
+    elif (form.cool.data == 5):
         send_mode_change("0c5")
     return '', 204
 
@@ -107,15 +107,15 @@ def cool():
 def brightness():
     if (form.brightness.data == 0):
         send_mode_change("1b0")
-    else if (form.brightness.data == 1):
+    elif (form.brightness.data == 1):
         send_mode_change("1b1")
-    else if (form.brightness.data == 2):
+    elif (form.brightness.data == 2):
         send_mode_change("1b2")
-    else if (form.brightness.data == 3):
+    elif (form.brightness.data == 3):
         send_mode_change("1b3")
-    else if (form.brightness.data == 4):
+    elif (form.brightness.data == 4):
         send_mode_change("1b4")
-    else if (form.brightness.data == 5):
+    elif (form.brightness.data == 5):
         send_mode_change("1b5")
     return '', 204
 
@@ -123,15 +123,15 @@ def brightness():
 def warm():
     if (form.warm.data == 0):
         send_mode_change("1w0")
-    else if (form.warm.data == 1):
+    elif (form.warm.data == 1):
         send_mode_change("1w1")
-    else if (form.warm.data == 2):
+    elif (form.warm.data == 2):
         send_mode_change("1w2")
-    else if (form.warm.data == 3):
+    elif (form.warm.data == 3):
         send_mode_change("1w3")
-    else if (form.warm.data == 4):
+    elif (form.warm.data == 4):
         send_mode_change("1w4")
-    else if (form.warm.data == 5):
+    elif (form.warm.data == 5):
         send_mode_change("1w5")
     return '', 204
 
@@ -139,15 +139,15 @@ def warm():
 def cool():
     if (form.cool.data == 0):
         send_mode_change("1c0")
-    else if (form.cool.data == 1):
+    elif (form.cool.data == 1):
         send_mode_change("1c1")
-    else if (form.cool.data == 2):
+    elif (form.cool.data == 2):
         send_mode_change("1c2")
-    else if (form.cool.data == 3):
+    elif (form.cool.data == 3):
         send_mode_change("1c3")
-    else if (form.cool.data == 4):
+    elif (form.cool.data == 4):
         send_mode_change("1c4")
-    else if (form.cool.data == 5):
+    elif (form.cool.data == 5):
         send_mode_change("1c5")
     return '', 204
 
@@ -156,15 +156,15 @@ def cool():
 def brightness():
     if (form.brightness.data == 0):
         send_mode_change("2b0")
-    else if (form.brightness.data == 1):
+    elif (form.brightness.data == 1):
         send_mode_change("2b1")
-    else if (form.brightness.data == 2):
+    elif (form.brightness.data == 2):
         send_mode_change("2b2")
-    else if (form.brightness.data == 3):
+    elif (form.brightness.data == 3):
         send_mode_change("2b3")
-    else if (form.brightness.data == 4):
+    elif (form.brightness.data == 4):
         send_mode_change("2b4")
-    else if (form.brightness.data == 5):
+    elif (form.brightness.data == 5):
         send_mode_change("2b5")
     return '', 204
 
@@ -172,15 +172,15 @@ def brightness():
 def warm():
     if (form.warm.data == 0):
         send_mode_change("2w0")
-    else if (form.warm.data == 1):
+    elif (form.warm.data == 1):
         send_mode_change("2w1")
-    else if (form.warm.data == 2):
+    elif (form.warm.data == 2):
         send_mode_change("2w2")
-    else if (form.warm.data == 3):
+    elif (form.warm.data == 3):
         send_mode_change("2w3")
-    else if (form.warm.data == 4):
+    elif (form.warm.data == 4):
         send_mode_change("2w4")
-    else if (form.warm.data == 5):
+    elif (form.warm.data == 5):
         send_mode_change("2w5")
     return '', 204
 
@@ -188,15 +188,15 @@ def warm():
 def cool():
     if (form.cool.data == 0):
         send_mode_change("2c0")
-    else if (form.cool.data == 1):
+    elif (form.cool.data == 1):
         send_mode_change("2c1")
-    else if (form.cool.data == 2):
+    elif (form.cool.data == 2):
         send_mode_change("2c2")
-    else if (form.cool.data == 3):
+    elif (form.cool.data == 3):
         send_mode_change("2c3")
-    else if (form.cool.data == 4):
+    elif (form.cool.data == 4):
         send_mode_change("2c4")
-    else if (form.cool.data == 5):
+    elif (form.cool.data == 5):
         send_mode_change("2c5")
     return '', 204
 
@@ -205,15 +205,15 @@ def cool():
 def brightness():
     if (form.brightness.data == 0):
         send_mode_change("3b0")
-    else if (form.brightness.data == 1):
+    elif (form.brightness.data == 1):
         send_mode_change("3b1")
-    else if (form.brightness.data == 2):
+    elif (form.brightness.data == 2):
         send_mode_change("3b2")
-    else if (form.brightness.data == 3):
+    elif (form.brightness.data == 3):
         send_mode_change("3b3")
-    else if (form.brightness.data == 4):
+    elif (form.brightness.data == 4):
         send_mode_change("3b4")
-    else if (form.brightness.data == 5):
+    elif (form.brightness.data == 5):
         send_mode_change("3b5")
     return '', 204
 
@@ -221,15 +221,15 @@ def brightness():
 def warm():
     if (form.warm.data == 0):
         send_mode_change("3w0")
-    else if (form.warm.data == 1):
+    elif (form.warm.data == 1):
         send_mode_change("3w1")
-    else if (form.warm.data == 2):
+    elif (form.warm.data == 2):
         send_mode_change("3w2")
-    else if (form.warm.data == 3):
+    elif (form.warm.data == 3):
         send_mode_change("3w3")
-    else if (form.warm.data == 4):
+    elif (form.warm.data == 4):
         send_mode_change("3w4")
-    else if (form.warm.data == 5):
+    elif (form.warm.data == 5):
         send_mode_change("3w5")
     return '', 204
 
@@ -237,15 +237,15 @@ def warm():
 def cool():
     if (form.cool.data == 0):
         send_mode_change("3c0")
-    else if (form.cool.data == 1):
+    elif (form.cool.data == 1):
         send_mode_change("3c1")
-    else if (form.cool.data == 2):
+    elif (form.cool.data == 2):
         send_mode_change("3c2")
-    else if (form.cool.data == 3):
+    elif (form.cool.data == 3):
         send_mode_change("3c3")
-    else if (form.cool.data == 4):
+    elif (form.cool.data == 4):
         send_mode_change("3c4")
-    else if (form.cool.data == 5):
+    elif (form.cool.data == 5):
         send_mode_change("3c5")
     return '', 204
 
