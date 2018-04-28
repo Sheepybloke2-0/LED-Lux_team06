@@ -71,7 +71,7 @@ def brightness():
 
 # master
 @app.route('/warm/')
-def warm(form.warm.data):
+def warm():
     if (form.warm.data == 0):
         send_mode_change("0w0")
     elif (form.warm.data == 1):
