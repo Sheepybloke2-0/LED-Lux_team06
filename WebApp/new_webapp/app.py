@@ -27,7 +27,9 @@ xbee = XBee(ser)
 app = Flask(__name__)
 
 class SliderForm(Form):
-    brightness = IntegerRangeField('brightness', default=5)
+    brightness = IntegerRangeField('brightness', default=0);
+    warm = IntegerRangeField('warm', default=0);
+    cool = IntegerRangeField('cool', default=0);
 
 #App functions
 @app.route('/')
@@ -35,39 +37,255 @@ def index():
     slider = SliderForm(csrf_enabled=False)
     return render_template('index.html', form=slider)
 
-@app.route('/rainbow/', endpoint='rainbow')
-def rainbow():
-    print('Running the rainbow lights!')
-    send_mode_change("r")
+@app.route('/L1')
+def L1():
+    slider = SliderForm(csrf_enabled=False)
+    return render_template('L1.html', form=slider)
+
+@app.route('/L2')
+def L2():
+    slider = SliderForm(csrf_enabled=False)
+    return render_template('L2.html', form=slider)
+
+@app.route('/L3')
+def L3():
+    slider = SliderForm(csrf_enabled=False)
+    print slider
+    return render_template('L3.html', form=slider)
+
+@app.route('/brightness/')
+def brightness():
+    if (form.brightness.data == 0):
+        send_mode_change("0b0")
+    else if (form.brightness.data == 1):
+        send_mode_change("0b1")
+    else if (form.brightness.data == 2):
+        send_mode_change("0b2")
+    else if (form.brightness.data == 3):
+        send_mode_change("0b3")
+    else if (form.brightness.data == 4):
+        send_mode_change("0b4")
+    else if (form.brightness.data == 5):
+        send_mode_change("0b5")
     return '', 204
 
-@app.route('/mood/', endpoint='mood')
-def mood():
-    print('Running the mood lights!')
-    #add zigbee serial commands
-    send_mode_change("m")
+# master
+@app.route('/warm/')
+def warm(form.warm.data):
+    if (form.warm.data == 0):
+        send_mode_change("0w0")
+    else if (form.warm.data == 1):
+        send_mode_change("0w1")
+    else if (form.warm.data == 2):
+        send_mode_change("0w2")
+    else if (form.warm.data == 3):
+        send_mode_change("0w3")
+    else if (form.warm.data == 4):
+        send_mode_change("0w4")
+    else if (form.warm.data == 5):
+        send_mode_change("0w5")
     return '', 204
 
-@app.route('/candle/', endpoint='candle')
-def candle():
-    print('Running the candle lights!')
-    #add zigbee serial commands
-    send_mode_change("c")
+@app.route('/cool/')
+def cool():
+    if (form.cool.data == 0):
+        send_mode_change("0c0")
+    else if (form.cool.data == 1):
+        send_mode_change("0c1")
+    else if (form.cool.data == 2):
+        send_mode_change("0c2")
+    else if (form.cool.data == 3):
+        send_mode_change("0c3")
+    else if (form.cool.data == 4):
+        send_mode_change("0c4")
+    else if (form.cool.data == 5):
+        send_mode_change("0c5")
     return '', 204
 
-@app.route('/warmwhite/', endpoint='warmwhite')
-def warmwhite():
-    print('Running the warm white lights!')
-    #add zigbee serial commands
-    send_mode_change("w")
+# L1
+@app.route('/brightness1/')
+def brightness():
+    if (form.brightness.data == 0):
+        send_mode_change("1b0")
+    else if (form.brightness.data == 1):
+        send_mode_change("1b1")
+    else if (form.brightness.data == 2):
+        send_mode_change("1b2")
+    else if (form.brightness.data == 3):
+        send_mode_change("1b3")
+    else if (form.brightness.data == 4):
+        send_mode_change("1b4")
+    else if (form.brightness.data == 5):
+        send_mode_change("1b5")
     return '', 204
 
-@app.route('/wave/', endpoint='wave')
-def wave():
-    print('Running the wave lights!')
-    #add zigbee serial commands
-    send_mode_change("b")
+@app.route('/warm1/')
+def warm():
+    if (form.warm.data == 0):
+        send_mode_change("1w0")
+    else if (form.warm.data == 1):
+        send_mode_change("1w1")
+    else if (form.warm.data == 2):
+        send_mode_change("1w2")
+    else if (form.warm.data == 3):
+        send_mode_change("1w3")
+    else if (form.warm.data == 4):
+        send_mode_change("1w4")
+    else if (form.warm.data == 5):
+        send_mode_change("1w5")
     return '', 204
+
+@app.route('/cool1/')
+def cool():
+    if (form.cool.data == 0):
+        send_mode_change("1c0")
+    else if (form.cool.data == 1):
+        send_mode_change("1c1")
+    else if (form.cool.data == 2):
+        send_mode_change("1c2")
+    else if (form.cool.data == 3):
+        send_mode_change("1c3")
+    else if (form.cool.data == 4):
+        send_mode_change("1c4")
+    else if (form.cool.data == 5):
+        send_mode_change("1c5")
+    return '', 204
+
+# L2
+@app.route('/brightness2/')
+def brightness():
+    if (form.brightness.data == 0):
+        send_mode_change("2b0")
+    else if (form.brightness.data == 1):
+        send_mode_change("2b1")
+    else if (form.brightness.data == 2):
+        send_mode_change("2b2")
+    else if (form.brightness.data == 3):
+        send_mode_change("2b3")
+    else if (form.brightness.data == 4):
+        send_mode_change("2b4")
+    else if (form.brightness.data == 5):
+        send_mode_change("2b5")
+    return '', 204
+
+@app.route('/warm2/')
+def warm():
+    if (form.warm.data == 0):
+        send_mode_change("2w0")
+    else if (form.warm.data == 1):
+        send_mode_change("2w1")
+    else if (form.warm.data == 2):
+        send_mode_change("2w2")
+    else if (form.warm.data == 3):
+        send_mode_change("2w3")
+    else if (form.warm.data == 4):
+        send_mode_change("2w4")
+    else if (form.warm.data == 5):
+        send_mode_change("2w5")
+    return '', 204
+
+@app.route('/cool2/')
+def cool():
+    if (form.cool.data == 0):
+        send_mode_change("2c0")
+    else if (form.cool.data == 1):
+        send_mode_change("2c1")
+    else if (form.cool.data == 2):
+        send_mode_change("2c2")
+    else if (form.cool.data == 3):
+        send_mode_change("2c3")
+    else if (form.cool.data == 4):
+        send_mode_change("2c4")
+    else if (form.cool.data == 5):
+        send_mode_change("2c5")
+    return '', 204
+
+# L3
+@app.route('/brightness3/')
+def brightness():
+    if (form.brightness.data == 0):
+        send_mode_change("3b0")
+    else if (form.brightness.data == 1):
+        send_mode_change("3b1")
+    else if (form.brightness.data == 2):
+        send_mode_change("3b2")
+    else if (form.brightness.data == 3):
+        send_mode_change("3b3")
+    else if (form.brightness.data == 4):
+        send_mode_change("3b4")
+    else if (form.brightness.data == 5):
+        send_mode_change("3b5")
+    return '', 204
+
+@app.route('/warm3/')
+def warm():
+    if (form.warm.data == 0):
+        send_mode_change("3w0")
+    else if (form.warm.data == 1):
+        send_mode_change("3w1")
+    else if (form.warm.data == 2):
+        send_mode_change("3w2")
+    else if (form.warm.data == 3):
+        send_mode_change("3w3")
+    else if (form.warm.data == 4):
+        send_mode_change("3w4")
+    else if (form.warm.data == 5):
+        send_mode_change("3w5")
+    return '', 204
+
+@app.route('/cool3/')
+def cool():
+    if (form.cool.data == 0):
+        send_mode_change("3c0")
+    else if (form.cool.data == 1):
+        send_mode_change("3c1")
+    else if (form.cool.data == 2):
+        send_mode_change("3c2")
+    else if (form.cool.data == 3):
+        send_mode_change("3c3")
+    else if (form.cool.data == 4):
+        send_mode_change("3c4")
+    else if (form.cool.data == 5):
+        send_mode_change("3c5")
+    return '', 204
+
+
+
+
+
+
+# @app.route('/rainbow/', endpoint='rainbow')
+# def rainbow():
+#     send_mode_change("r")
+#     return '', 204
+#
+# @app.route('/mood/', endpoint='mood')
+# def mood():
+#     print('Running the mood lights!')
+#     #add zigbee serial commands
+#     # send_mode_change("m")
+#     return '', 204
+#
+# @app.route('/candle/', endpoint='candle')
+# def candle():
+#     print('Running the candle lights!')
+#     #add zigbee serial commands
+#     # send_mode_change("c")
+#     return '', 204
+#
+# @app.route('/warmwhite/', endpoint='warmwhite')
+# def warmwhite():
+#     print('Running the warm white lights!')
+#     #add zigbee serial commands
+#     # send_mode_change("w")
+#     return '', 204
+#
+# @app.route('/wave/', endpoint='wave')
+# def wave():
+#     print('Running the wave lights!')
+#     #add zigbee serial commands
+#     # send_mode_change("b")
+#     return '', 204
 
 #Starter and shutdown functions
 def interrupt():
@@ -88,7 +306,6 @@ def serial_send( lightMode ):
     ser.write(lightMode)
 
 if __name__ == '__main__':
-
     #init zigbee module
     ser.open()
     app = create_app()

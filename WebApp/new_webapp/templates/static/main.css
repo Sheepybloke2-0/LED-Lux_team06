@@ -17,7 +17,7 @@ body {
 .flex-container {
   display: flex;
   flex-wrap: wrap;
-  align-content: stretch;
+  align-content: center;
 }
 
 .button-container {
@@ -48,12 +48,12 @@ body {
  }
 
  .button:hover {
-     background-color: #33ff42;
+     background-color: #9b42f4;
      color: white;
  }
 
 .big-btn:hover{
-  background-color: #33ff42;
+  background-color: #9b42f4;
   color: white;
 }
 
