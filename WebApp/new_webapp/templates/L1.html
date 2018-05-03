@@ -39,8 +39,8 @@
     <div class="slide-container" >
       <form class="slide-container" href="/warm1/">
         <p>
-          {{ form.brightness.label}}
-          {{ form.brightness(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
+          {{ form.warm.label}}
+          {{ form.warm(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
           <output for="warm" id="warm-level-all">{{ form.warm.data }}</output>
         </p>
       </form>
@@ -48,8 +48,8 @@
     <div class="slide-container" >
       <form class="slide-container" href="/cool1/">
         <p>
-          {{ form.brightness.label}}
-          {{ form.brightness(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}
+          {{ form.cool.label}}
+          {{ form.cool(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}
           <output for="cool" id="cool-level-all">{{ form.cool.data }}</output>
         </p>
       </form>
