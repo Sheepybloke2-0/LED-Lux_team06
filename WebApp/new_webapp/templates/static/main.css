@@ -101,7 +101,7 @@ body {
      transform: none;
      width: 100%; /* Full-width */
      height: 100%; /* Specified height */
-     background: #FFFFFF; /* Grey background */
+     background: #ffffff; /* Grey background */
      border-radius: 5px;
      outline: none; /* Remove outline */
      opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
@@ -121,7 +121,7 @@ body {
      appearance: none;
      width: 25px; /* Set a specific slider handle width */
      height: 25px; /* Slider handle height */
-     background: #4CAF50; /* Green background */
+     background: #0c69f4; /* Green background */
      cursor: pointer; /* Cursor on hover */
      border-radius: 50%;
  }
@@ -129,6 +129,6 @@ body {
  .slider::-moz-range-thumb {
      width: 25px; /* Set a specific slider handle width */
      height: 25px; /* Slider handle height */
-     background: #4CAF50; /* Green background */
+     background: #0c69f4; /* Green background */
      cursor: pointer; /* Cursor on hover */
  }
