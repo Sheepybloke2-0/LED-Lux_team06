@@ -399,7 +399,7 @@ def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x,
 
     sess.close()
 
-def webcam_controller(webcam,):
+def webcam_controller(webcam, input_frame_q):
     while(True):
         err, img = webcam.getFrame()
         input_frame_q.put(img)
@@ -509,110 +509,108 @@ if __name__ == '__main__':
                 elif frame_dict['depth'] < 0.5:
                     print("Person %s: Forward" % (array_idx))
 
-            # Use the bit to change whether or not the light should turn on
-            if frame_dict['person_in_reg1'] is True:
-                current_lights['light1'] = True
-            else:
-                current_lights['light1'] = False
-
-            if frame_dict['person_in_reg2'] is True:
-                current_lights['light2'] = True
-            else:
-                current_lights['light2'] = False
-
-            if frame_dict['person_in_reg3'] is True:
-                current_lights['light3'] = True
-            else:
-                current_lights['light3'] = False
-
-            if current_lights['light1'] == True:
-                # Send the write command only if they're not on
-                if old_lights['light1'] == False:
-                    print("light 1 on")
-                    # xbee.write(b'1o0')
-                    old_lights['light1'] = True
-            elif current_lights['light1'] == False:
-                # Send the write command only if they're on to turn them off
-                if old_lights['light1'] == True:
-                    print("light 1 off")
-                    # xbee.write(b'1f0')
-                    old_lights['light1'] = False
-
-            if current_lights['light2'] == True:
-                if old_lights['light2'] == False:
-                    print("light 2 on")
-                    # xbee.write(b'2o0')
-                    old_lights['light2'] = True
-            elif current_lights['light2'] == False:
-                if old_lights['light2'] == True:
-                    print("light 2 off")
-                    # xbee.write(b'2f0')
-                    old_lights['light2'] = False
-
-            if current_lights['light3'] == True:
-                if old_lights['light3'] == False:
-                    print("light 3 on")
-                    # xbee.write(b'3o0')
-                    old_lights['light3'] = True
-            elif current_lights['light3'] == False:
-                if old_lights['light3'] == True:
-                    print("light 3 off")
-                    # xbee.write(b'3f0')
-                    old_lights['light3'] = False
-
-            if frame_dict['tv_recog'] is True:
-                if light_changed_tv == False:
-                    # xbee.write(b'0b1')
-                    time.sleep(0.1)
-                    print("Changing Lights cause TV")
-
-                tv_under_recog_frames = 0
-                light_changed_tv = True
-            elif frame_dict['tv_under_recog'] is True:
-                tv_under_recog_frames += 1
-
-            if (tv_under_recog_frames > TV_RECOG_THRESHOLD and frame_dict['tv_under_recog'] is True) \
-                or (frame_dict['tv_under_recog'] is False and frame_dict['tv_recog'] is False):
-
-                if light_changed_tv == True:
-                    # xbee.write(b'0b4')
-                    time.sleep(0.1)
-                    light_changed_tv = False
-                    print("Changing Lights cause no TV")
-
-            if frame_dict['book_recog'] is True:
-                if light_changed_book == False:
-                    # xbee.write(b'0c1')
-                    time.sleep(0.1)
-                    # xbee.write(b'0w5')
-                    print("Changing Lights cause book")
-
-                book_under_recog_frames = 0
-                light_changed_book = True
-            elif frame_dict['book_under_recog'] is True:
-                book_under_recog_frames += 1
-
-            if (book_under_recog_frames > BOOK_RECOG_THRESHOLD and frame_dict['book_under_recog'] is True) \
-                or (frame_dict['book_under_recog'] is False and frame_dict['book_recog'] is False):
-
-                if light_changed_book == True:
-                    print("Changing Lights cause no book")
-                    # xbee.write(b'0c4')
-                    time.sleep(0.1)
-                    # xbee.write(b'0w4')
-                    light_changed_book = False
-
-            if delay_counter == TIME_OUT:
-                # xbee.write(b'0f0')
-                delay_counter = 0
-                current_lights = { 'light1': False, 'light2': False, 'light3': False}
-            elif frame_dict['person_in_frame'] is False:
-                delay_counter += 1
-
-            img = output_frame_q.get()
-            cv2.imshow("img", img)
+        # Use the bit to change whether or not the light should turn on
+        if frame_dict['person_in_reg1'] is True:
+            current_lights['light1'] = True
         else:
-            cv2.imshow("img", img)
+            current_lights['light1'] = False
+
+        if frame_dict['person_in_reg2'] is True:
+            current_lights['light2'] = True
+        else:
+            current_lights['light2'] = False
+
+        if frame_dict['person_in_reg3'] is True:
+            current_lights['light3'] = True
+        else:
+            current_lights['light3'] = False
+
+        if current_lights['light1'] == True:
+        # Send the write command only if they're not on
+            if old_lights['light1'] == False:
+                print("light 1 on")
+                # xbee.write(b'1o0')
+                old_lights['light1'] = True
+        elif current_lights['light1'] == False:
+        # Send the write command only if they're on to turn them off
+            if old_lights['light1'] == True:
+                print("light 1 off")
+                # xbee.write(b'1f0')
+                old_lights['light1'] = False
+
+        if current_lights['light2'] == True:
+            if old_lights['light2'] == False:
+                print("light 2 on")
+                # xbee.write(b'2o0')
+                old_lights['light2'] = True
+        elif current_lights['light2'] == False:
+            if old_lights['light2'] == True:
+                print("light 2 off")
+                # xbee.write(b'2f0')
+                old_lights['light2'] = False
+
+        if current_lights['light3'] == True:
+            if old_lights['light3'] == False:
+                print("light 3 on")
+                # xbee.write(b'3o0')
+                old_lights['light3'] = True
+        elif current_lights['light3'] == False:
+            if old_lights['light3'] == True:
+                print("light 3 off")
+                # xbee.write(b'3f0')
+                old_lights['light3'] = False
+
+        if frame_dict['tv_recog'] is True:
+            if light_changed_tv == False:
+                # xbee.write(b'0b1')
+                time.sleep(0.1)
+                print("Changing Lights cause TV")
+
+            tv_under_recog_frames = 0
+            light_changed_tv = True
+        elif frame_dict['tv_under_recog'] is True:
+            tv_under_recog_frames += 1
+
+        if (tv_under_recog_frames > TV_RECOG_THRESHOLD and frame_dict['tv_under_recog'] is True) \
+            or (frame_dict['tv_under_recog'] is False and frame_dict['tv_recog'] is False):
+
+            if light_changed_tv == True:
+                # xbee.write(b'0b4')
+                time.sleep(0.1)
+                light_changed_tv = False
+                print("Changing Lights cause no TV")
+
+        if frame_dict['book_recog'] is True:
+            if light_changed_book == False:
+                # xbee.write(b'0c1')
+                time.sleep(0.1)
+                # xbee.write(b'0w5')
+                print("Changing Lights cause book")
+
+            book_under_recog_frames = 0
+            light_changed_book = True
+        elif frame_dict['book_under_recog'] is True:
+            book_under_recog_frames += 1
+
+        if (book_under_recog_frames > BOOK_RECOG_THRESHOLD and frame_dict['book_under_recog'] is True) \
+            or (frame_dict['book_under_recog'] is False and frame_dict['book_recog'] is False):
+
+            if light_changed_book == True:
+                print("Changing Lights cause no book")
+                # xbee.write(b'0c4')
+                time.sleep(0.1)
+                # xbee.write(b'0w4')
+                light_changed_book = False
+
+        if delay_counter == TIME_OUT:
+            # xbee.write(b'0f0')
+            delay_counter = 0
+            current_lights = { 'light1': False, 'light2': False, 'light3': False}
+        elif frame_dict['person_in_frame'] is False:
+            delay_counter += 1
+
+        img = output_frame_q.get()
+        cv2.imshow("img", img)
 
         k = cv2.waitKey(60) & 0xFF
         if k == 27:
