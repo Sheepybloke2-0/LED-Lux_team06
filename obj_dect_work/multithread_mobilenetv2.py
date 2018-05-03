@@ -416,10 +416,10 @@ if __name__ == '__main__':
     # Set the Pool size and number of workers
     pool = Pool(3 , classification_node, (input_frame_q,  output_frame_q, output_dict_q,
                                           old_mid_x, old_mid_y, old_area))
-
     # Start the Webcam
     webcam = WebcamVideoStream(src=0).start()
-
+    webcam_pool = Pool(1, webcam_controller, webcam)
+    
     # Init the serial
     # xbee = serial.Serial(PORT, BAUD_RATE)
 
@@ -445,16 +445,11 @@ if __name__ == '__main__':
 
     # Start the tensorflow session
     while(1):
-        err, img = webcam.getFrame()
-        if err == True:
-            
-            if skip_count != 3:
-                input_frame_q.put(img)
+                print(input_frame_q.qsize())
             
                 # Retreive the dicts and break out the useful ones
                 frame_dict = output_dict_q.get()
                 for array_idx in range(0, frame_dict['num_people']): 
-                    print(frame_dict['depth'])
                     if frame_dict['direction'] != None:
                        # try:
                        #     if frame_dict['direction'] == LFT:
@@ -609,10 +604,12 @@ if __name__ == '__main__':
                     delay_counter += 1
 
                 img = output_frame_q.get()
-                skip_count += 1
-            elif skip_count == 3:
-                skip_count = 0 
-            cv2.imshow("img", img)
+                cv2.imshow("img", img)
+            else:
+           #     skip_count += 1
+           # elif skip_count == 3:
+           #     skip_count = 0 
+                cv2.imshow("img", img)
         else:
             print("Check if the camera is connected to the system!")
             break
