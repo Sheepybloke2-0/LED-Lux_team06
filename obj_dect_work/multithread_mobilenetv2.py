@@ -26,9 +26,9 @@ if tf.__version__ < '1.4.0':
 
 # --------- Globals -------------------------
 # Development Environment
-# MODEL_PATH = '/home/rtl55/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v1_coco_2017_11_17'
+MODEL_PATH = '/home/rtl55/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v2_coco_2018_03_29'
 # TK1 Environment
-MODEL_PATH = '/media/ubuntu/extraSpace/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v2_coco_2018_03_29'
+# MODEL_PATH = '/media/ubuntu/extraSpace/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v2_coco_2018_03_29'
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
 PATH_TO_CKPT = MODEL_PATH + '/frozen_inference_graph.pb'
 
@@ -246,6 +246,8 @@ def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x,
     sess = tf.Session(graph=detection_graph)
 
     while True:
+        print( multiprocessing.current_process())
+        print(output_frame_q.qsize())
         # We want to reinit this dictionary every frame
         frame_dict = {
             'person_in_frame' : False, # Connected to delay_counter
@@ -399,11 +401,12 @@ def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x,
 
     sess.close()
 
-def webcam_controller(webcam, input_frame_q):
-    while(True):
-        err, img = webcam.getFrame()
-        input_frame_q.put(img)
-        time.sleep(0.05)
+# def webcam_controller(webcam, input_frame_q):
+#     while(True):
+#         err, img = webcam.getFrame()
+#         if err == True:
+#             input_frame_q.put(img)
+#         time.sleep(0.05)
 
 if __name__ == '__main__':
     # Start the multiprocessing
@@ -420,11 +423,11 @@ if __name__ == '__main__':
     output_dict_q = Queue(maxsize=5 )
 
     # Set the Pool size and number of workers
-    pool = Pool(3 , classification_node, (input_frame_q,  output_frame_q, output_dict_q,
+    pool = Pool(4 , classification_node, (input_frame_q,  output_frame_q, output_dict_q,
                                           old_mid_x, old_mid_y, old_area))
     # Start the Webcam
     webcam = WebcamVideoStream(src=0).start()
-    webcam_pool = Pool(1, webcam_controller, (webcam, input_frame_q))
+    # webcam_pool = Pool(1, webcam_controller, (webcam, input_frame_q))
 
     # Init the serial
     # xbee = serial.Serial(PORT, BAUD_RATE)
@@ -451,7 +454,8 @@ if __name__ == '__main__':
 
     # Start the tensorflow session
     while(True):
-        print(input_frame_q.qsize())
+        err, img = webcam.getFrame()
+        input_frame_q.put(img)
 
         # Retreive the dicts and break out the useful ones
         frame_dict = output_dict_q.get()
