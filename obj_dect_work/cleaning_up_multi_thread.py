@@ -12,11 +12,8 @@ import serial
 # Append the current dir to the syspath so that it finds the correct modules
 sys.path.append("..")
 
-# From https://github.com/datitran/object_detector_app/blob/master/utils/app_utils.py, written by
-# pyimagesearch to imporve camera FPS
-from utils.app_utils import FPS, WebcamVideoStream
 # Needed to optimize the FPS and detection
-from multiprocessing import Queue, Pool
+from multiprocessing import Queue, Pool, Manager
 # Not sure if needed
 from collections import defaultdict
 
@@ -28,7 +25,10 @@ if tf.__version__ < '1.4.0':
   raise ImportError('Please upgrade your tensorflow installation to v1.4.* or later!')
 
 # --------- Globals -------------------------
-MODEL_PATH = '/home/rtl55/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v1_coco_2017_11_17'
+# Development Environment
+# MODEL_PATH = '/home/rtl55/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v1_coco_2017_11_17'
+# TK1 Environment
+MODEL_PATH = '/media/ubuntu/extraSpace/tensorflow/models/research/object_detection/models/model_zoo/ssd_mobilenet_v1_coco_2017_11_17'
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
 PATH_TO_CKPT = MODEL_PATH + '/frozen_inference_graph.pb'
 
@@ -63,7 +63,7 @@ BAK = 1
 LFT = 0
 RGT = 1
 
-AREA_THRESHOLD = 2000
+AREA_THRESHOLD = 1000
 X_THRESHOLD  = 15
 Y_THRESHOLD  = 1
 
@@ -231,11 +231,8 @@ def get_dif(cur_value, dif_array, old_value_array, idx):
     old_value_array[idx] = cur_value
     return dif_array, old_value_array
 
-def worker_node(input_frame_q, output_frame_q, output_dict_q):
+def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x, old_mid_y, old_area):
     """Use for parrallelizing the frame detections"""
-
-
-
     # This needs to be done everytime as each has its own new space
     detection_graph = tf.Graph()
     with detection_graph.as_default():
@@ -252,6 +249,7 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
         # We want to reinit this dictionary every frame
         frame_dict = {
             'person_in_frame' : False, # Connected to delay_counter
+            'num_people'      : 0, 
             'person_in_reg1'  : False, # Tells which of the three lights to turn on
             'person_in_reg2'  : False,
             'person_in_reg3'  : False,
@@ -260,7 +258,7 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
             'book_recog'      : False, # Is there a book in frame? Must be above 50%
             'book_under_recog': False, # There may be a book in frame. 25% < book < 50%
             'tv_recog'        : False,
-            'book_under_recog': False,
+            'tv_under_recog': False,
 
             'reg_total_area_dict' : {'reg1': 1, 'reg2': 1, 'reg3': 1},
             'reg_bbox_area_dict'  : {'reg1': 1, 'reg2': 1, 'reg3': 1}
@@ -272,6 +270,11 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
         image, out_dict = detect_objects(frame_rgb, detection_graph, sess)
         # Image needed to be converted to RGB, but openCV uses BGR.
         image_brg   = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+       
+        # Draw ROIs
+        image_brg = cv2.rectangle(image_brg, region1_start, region1_end, (125, 0, 125), 2)
+        image_brg = cv2.rectangle(image_brg, region2_start, region2_end, (125, 0, 125), 2)
+        image_brg = cv2.rectangle(image_brg, region3_start, region3_end, (125, 0, 125), 2)
 
         # Start the image processing by getting the information from the classification
         classes = out_dict['classes']
@@ -286,17 +289,17 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
         person_idx = []
         for id in classes_index:
             # Scores, classes and boxes all have the same index in their respective lists
-            current_index = class_index.index
+            current_index = classes_index.index
             # Grab all the objects detected
             if scores[0][current_index] > 0.50:
                 found_obj.append(id)
                 # We need the index of each human to get their bounding boxes.
-                if id is 1:
+                if int(id) is 1:
                     person_idx.append(current_index)
                 # If it's a book or TV, say that recognized them
-                elif id is 84: # Book
+                elif int(id) is 84: # Book
                     frame_dict['book_recog'] = True
-                elif id is 72: # TV
+                elif int(id) is 72: # TV
                     frame_dict['tv_recog'] = True
 
             # If a book or TV is detected over 25%, let's say it might be true
@@ -332,19 +335,22 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
                 area = dif_x * dif_y
 
                 # Draw the mid point
-                cv2.circle(img_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
+                image_brg = cv2.circle(image_brg, (int(mid_x), int(mid_y)), 10, (0,255,120), -1)
 
                 frame_dict['reg_total_area_dict'], frame_dict['reg_bbox_area_dict'], total_percent_area = get_regions(bounding_box, area, dif_x, dif_y)
 
                 # If there is a person in the ROI flip to true
                 if frame_dict['reg_bbox_area_dict']['reg1'] != 0:
                     frame_dict['person_in_reg1'] = True
+                    print('reg1')
 
                 if frame_dict['reg_bbox_area_dict']['reg2'] != 0:
                     frame_dict['person_in_reg2'] = True
+                    print('reg2')
 
                 if frame_dict['reg_bbox_area_dict']['reg3'] != 0:
                     frame_dict['person_in_reg3'] = True
+                    print('reg3')
 
                 if total_percent_area <= 0.70:
                     # TODO: We may need a semiphore here, but I think that a queue will work.
@@ -352,21 +358,15 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
                     # Assume 1 to 1 indx to person
                     # If is positive, person is moving to their left
                     # If is negative, person is moving to their right
-                    old_mid_x = input_old_mid_x_q
                     mid_diff_x,  old_mid_x = get_dif(mid_x, mid_diff_x, old_mid_x, array_idx)
-                    output_old_mid_x_q.put()
 
                     # If is positive, this means that y is decreasing aka moving up in the frame.
                     # If is negative, this means that y is increasing aka moving down in the frame.
-                    old_mid_y = input_old_mid_y_q
                     mid_diff_y,  old_mid_y = get_dif(mid_y, mid_diff_y, old_mid_y, array_idx)
-                    output_old_mid_y_q.put()
 
                     # If is positive, this means that area is decreasing aka moving backwards  in the frame.
                     # If is negative, this means that area is increasing aka moving forwardin the frame.
-                    old_area = input_old_area_q
                     diff_area, old_area = get_dif(area, diff_area, old_area, array_idx)
-                    output_old_area_q.put()
 
                     try:
                         # If positive and box area is shrinking, means (often) moving back into the distance
@@ -377,7 +377,7 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
                             frame_dict['depth'] = FWD
                         # Send a null set if nothing changed
                         else:
-                            frame_dict['direction'] = None
+                            frame_dict['depth'] = None
 
                         if mid_diff_x[array_idx] > X_THRESHOLD and diff_area[array_idx] < AREA_THRESHOLD:
                             frame_dict['direction'] = RGT
@@ -390,59 +390,56 @@ def worker_node(input_frame_q, output_frame_q, output_dict_q):
                         frame_dict['depth'] = None
                         frame_dict['direction'] = None
                 array_idx += 1
+                frame_dict['num_people'] += 1
         else:
-            frame_dict['person_in_frame'] = False
-
-        # Draw ROIs
-        cv2.rectangle(image_brg, region1_start, region1_end, (125, 0, 125), 2)
-        cv2.rectangle(image_brg, region2_start, region2_end, (125, 0, 125), 2)
-        cv2.rectangle(image_brg, region3_start, region3_end, (125, 0, 125), 2)
-
+            frame_dict['person_in_frame'] = False 
+        
         output_frame_q.put(image_brg)
-        output_dict_q.put(frame_dict)
-
+        output_dict_q.put(frame_dict) 
+    
     sess.close()
 
 if __name__ == '__main__':
     # Start the multiprocessing
     logger = multiprocessing.log_to_stderr()
+    manager = multiprocessing.Manager()
     # logger.setLevel(multiprocessing.SUBDEBUG)
-
+    # Set the managed variables   
+    old_mid_x = manager.list()
+    old_mid_y = manager.list()
+    old_area = manager.list()
     # Set queue sizes
-    input_frame_q = Queue(maxsize=5 )
-    output_frame_q = Queue(maxsize=5)
-    output_dict_q = Queue(maxsize=5)
+    input_frame_q = Queue(maxsize=20 )
+    output_frame_q = Queue(maxsize=20)
+    output_dict_q = Queue(maxsize=20)
 
     # Set the Pool size and number of workers
-    pool = Pool(2 , worker_node, (input_frame_q,  output_frame_q, output_dict_q)
+    pool = Pool(4 , classification_node, (input_frame_q,  output_frame_q, output_dict_q,
+                                          old_mid_x, old_mid_y, old_area))
 
     # Start the Webcam
     webcam = WebcamVideoStream(src=0).start()
 
     # Init the serial
-    xbee = serial.Serial(PORT, BAUD_RATE)
+    # xbee = serial.Serial(PORT, BAUD_RATE)
 
     # To compensate for distance, draw middle a little larger
     # TODO move to top?
 
-    print("Quick XBee test")
-    xbee.write(b'0o0\n')
-    time.sleep(2)
-    xbee.write(b'0b1')
-    time.sleep(2)
-    xbee.write(b'0f0\n')
+   # print("Quick XBee test") 
+   # xbee.write(b'0o0\n')
+   # time.sleep(2)
+   # xbee.write(b'0b1')
+   # time.sleep(2)
+   # xbee.write(b'0f0\n')
 
     delay_counter = 0
     book_under_recog_frames = 0
     tv_under_recog_frames = 0
 
-    old_mid_x = [0]
-    old_mid_y = [0]
-    old_area = [0]
     # Assume
     direction = [[ LFT, LFT, LFT]]
     depth = [[ FWD, FWD, FWD]]
-    dist = [ 0 ]
 
     # Start the tensorflow session
     while(1):
@@ -452,52 +449,60 @@ if __name__ == '__main__':
 
             # Retreive the dicts and break out the useful ones
             frame_dict = output_dict_q.get()
+            for array_idx in range(0, frame_dict['num_people']): 
+                print(frame_dict['depth'])
+                if frame_dict['direction'] != None:
+                   # try:
+                   #     if frame_dict['direction'] == LFT:
+                   #         direction[array_idx].append(LFT)
+                   #     elif frame_dict['direction'] == RGT:
+                   #         direction[array_idx].append(RGT)
+                   #     direction[array_idx].pop(0)
+                   #     avg_direction = np.mean(direction[array_idx])
+                   # except IndexError:
+                   #     direction.append([ LFT, LFT, LFT])
+                   #     print('direction ' + direction)
+                   #     if frame_dict['direction'] == LFT:
+                   #         direction[array_idx].append(LFT)
+                   #     elif frame_dict['direction'] == RGT:
+                   #         direction[array_idx].append(RGT)
+                   #     direction[array_idx].pop(0)
+                   #     avg_direction = np.mean(direction[array_idx])
 
-            if frame_dict['direction'] != None:
-                try:
-                    if frame_dict['direction'] == LFT:
-                        direction[array_idx].append(LFT)
-                    elif frame_dict['direction'] == RGT:
-                        direction[array_idx].append(RGT)
-                    direction[array_idx].pop(0)
-                    avg_direction = np.mean(direction[array_idx])
-                except IndexError:
-                    direction.append([ LFT, LFT, LFT])
-                    print(array_idx)
-                    print(direction)
-                    if frame_dict['direction'] == LFT:
-                        direction[array_idx].append(LFT)
-                    elif frame_dict['direction'] == RGT:
-                        direction[array_idx].append(RGT)
-                    direction[array_idx].pop(0)
-                    avg_direction = np.mean(direction[array_idx])
+                   # if avg_direction > 0.5:
+                   #     print("Person %s: Right" % (array_idx))
+                   # elif avg_direction < 0.5:
+                   #     print("Person %s: Left" % (array_idx))
+                    if frame_dict['direction'] > 0.5:
+                        print("Person %s: Right" % (array_idx))
+                    elif frame_dict['direction'] < 0.5:
+                        print("Person %s: Left" % (array_idx))
 
-                if avg_direction > 0.5:
-                    print("Person %s: Right" % (array_idx))
-                elif avg_direction < 0.5:
-                    print("Person %s: Left" % (array_idx))
+                if frame_dict['depth'] != None:
+                   # try:
+                   #     if frame_dict['depth'] == FWD:
+                   #         depth[array_idx].append(FWD)
+                   #     elif frame_dict['depth'] == BAK:
+                   #         depth[array_idx].append(BAK)
+                   #     depth[array_idx].pop(0)
+                   #     avg_depth = np.mean(depth[array_idx])
+                   # except IndexError:
+                   #     depth.append([ FWD, FWD, FWD])
+                   #     if frame_dict['depth'] == FWD:
+                   #         depth[array_idx].append(FWD)
+                   #     elif frame_dict['depth'] == BAK:
+                   #         depth[array_idx].append(BAK)
+                   #     depth[array_idx].pop(0)
+                   #     avg_depth = np.mean(depth[array_idx])
 
-            if frame_dict['depth'] != None:
-                try:
-                    if frame_dict['depth'] == FWD:
-                        depth[array_idx].append(FWD)
-                    elif frame_dict['depth'] == BAK:
-                        depth[array_idx].append(BAK)
-                    depth[array_idx].pop(0)
-                    avg_depth = np.mean(depth[array_idx])
-                except IndexError:
-                    depth.append([ FWD, FWD, FWD])
-                    if frame_dict['depth'] == FWD:
-                        depth[array_idx].append(FWD)
-                    elif frame_dict['depth'] == BAK:
-                        depth[array_idx].append(BAK)
-                    depth[array_idx].pop(0)
-                    avg_depth = np.mean(depth[array_idx])
-
-                if avg_depth > 0.5:
-                    print("Person %s: Backward" % (array_idx))
-                elif avg_depth < 0.5:
-                    print("Person %s: Forward" % (array_idx))
+                   # if avg_depth > 0.5:
+                   #     print("Person %s: Backward" % (array_idx))
+                   # elif avg_depth < 0.5:
+                   #     print("Person %s: Forward" % (array_idx))
+                    if frame_dict['depth'] > 0.5:
+                        print("Person %s: Backward" % (array_idx))
+                    elif frame_dict['depth'] < 0.5:
+                        print("Person %s: Forward" % (array_idx))
 
             # Use the bit to change whether or not the light should turn on
             if frame_dict['person_in_reg1'] is True:
@@ -518,41 +523,41 @@ if __name__ == '__main__':
             if current_lights['light1'] == True:
                 # Send the write command only if they're not on
                 if old_lights['light1'] == False:
-                    print("light on")
-                    xbee.write(b'1o0')
+                    print("light 1 on")
+                    # xbee.write(b'1o0')
                     old_lights['light1'] = True
             elif current_lights['light1'] == False:
                 # Send the write command only if they're on to turn them off
                 if old_lights['light1'] == True:
-                    print("light off")
-                    xbee.write(b'1f0')
+                    print("light 1 off")
+                    # xbee.write(b'1f0')
                     old_lights['light1'] = False
 
             if current_lights['light2'] == True:
                 if old_lights['light2'] == False:
-                    print("light on")
-                    xbee.write(b'2o0')
+                    print("light 2 on")
+                    # xbee.write(b'2o0')
                     old_lights['light2'] = True
             elif current_lights['light2'] == False:
                 if old_lights['light2'] == True:
-                    print("light off")
-                    xbee.write(b'2f0')
+                    print("light 2 off")
+                    # xbee.write(b'2f0')
                     old_lights['light2'] = False
 
             if current_lights['light3'] == True:
                 if old_lights['light3'] == False:
-                    print("light on")
-                    xbee.write(b'3o0')
+                    print("light 3 on")
+                    # xbee.write(b'3o0')
                     old_lights['light3'] = True
             elif current_lights['light3'] == False:
                 if old_lights['light3'] == True:
-                    print("light off")
-                    xbee.write(b'3f0')
+                    print("light 3 off")
+                    # xbee.write(b'3f0')
                     old_lights['light3'] = False
 
             if frame_dict['tv_recog'] is True:
                 if light_changed_tv == False:
-                    xbee.write(b'0b1')
+                    # xbee.write(b'0b1')
                     time.sleep(0.1)
                     print("Changing Lights cause TV")
 
@@ -563,17 +568,18 @@ if __name__ == '__main__':
 
             if (tv_under_recog_frames > TV_RECOG_THRESHOLD and frame_dict['tv_under_recog'] is True) \
                 or (frame_dict['tv_under_recog'] is False and frame_dict['tv_recog'] is False):
-
-                xbee.write(b'0b4')
-                time.sleep(0.1)
-                light_changed_tv = False
-                print("Changing Lights cause no TV")
+                
+                if light_changed_tv == True:
+                    # xbee.write(b'0b4')
+                    time.sleep(0.1)
+                    light_changed_tv = False
+                    print("Changing Lights cause no TV")
 
             if frame_dict['book_recog'] is True:
                 if light_changed_book == False:
-                    xbee.write(b'0c1')
+                    # xbee.write(b'0c1')
                     time.sleep(0.1)
-                    xbee.write(b'0w5')
+                    # xbee.write(b'0w5')
                     print("Changing Lights cause book")
 
                 book_under_recog_frames = 0
@@ -583,21 +589,23 @@ if __name__ == '__main__':
 
             if (book_under_recog_frames > BOOK_RECOG_THRESHOLD and frame_dict['book_under_recog'] is True) \
                 or (frame_dict['book_under_recog'] is False and frame_dict['book_recog'] is False):
-                print("Changing Lights cause no book")
-                xbee.write(b'0c4')
-                time.sleep(0.1)
-                xbee.write(b'0w4')
-                light_changed_book = False
+               
+                if light_changed_book == True:
+                    print("Changing Lights cause no book")
+                    # xbee.write(b'0c4')
+                    time.sleep(0.1)
+                    # xbee.write(b'0w4')
+                    light_changed_book = False
 
             if delay_counter == TIME_OUT:
-                xbee.write(b'0f0')
+                # xbee.write(b'0f0')
                 delay_counter = 0
                 current_lights = { 'light1': False, 'light2': False, 'light3': False}
             elif frame_dict['person_in_frame'] is False:
                 delay_counter += 1
 
-            # old_lights = current_lights
-            cv2.imshow("img", img_brg)
+            img = output_frame_q.get()
+            cv2.imshow("img", img)
         else:
             print("Check if the camera is connected to the system!")
             break
@@ -607,7 +615,7 @@ if __name__ == '__main__':
             break
 
     cv2.destroyAllWindows()
-    xbee.write(b'0f0\n')
+    # xbee.write(b'0f0\n')
     time.sleep(1)
     webcam.stop()
     pool.terminate()
