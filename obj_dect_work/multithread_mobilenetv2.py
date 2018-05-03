@@ -249,7 +249,7 @@ def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x,
         # We want to reinit this dictionary every frame
         frame_dict = {
             'person_in_frame' : False, # Connected to delay_counter
-            'num_people'      : 0, 
+            'num_people'      : 0,
             'person_in_reg1'  : False, # Tells which of the three lights to turn on
             'person_in_reg2'  : False,
             'person_in_reg3'  : False,
@@ -270,7 +270,7 @@ def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x,
         image, out_dict = detect_objects(frame_rgb, detection_graph, sess)
         # Image needed to be converted to RGB, but openCV uses BGR.
         image_brg   = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-       
+
         # Draw ROIs
         image_brg = cv2.rectangle(image_brg, region1_start, region1_end, (125, 0, 125), 2)
         image_brg = cv2.rectangle(image_brg, region2_start, region2_end, (125, 0, 125), 2)
@@ -392,19 +392,25 @@ def classification_node(input_frame_q, output_frame_q, output_dict_q, old_mid_x,
                 array_idx += 1
                 frame_dict['num_people'] += 1
         else:
-            frame_dict['person_in_frame'] = False 
-        
+            frame_dict['person_in_frame'] = False
+
         output_frame_q.put(image_brg)
-        output_dict_q.put(frame_dict) 
-    
+        output_dict_q.put(frame_dict)
+
     sess.close()
+
+def webcam_controller(webcam,):
+    while(True):
+        err, img = webcam.getFrame()
+        input_frame_q.put(img)
+        time.sleep(0.05)
 
 if __name__ == '__main__':
     # Start the multiprocessing
     logger = multiprocessing.log_to_stderr()
     manager = multiprocessing.Manager()
     # logger.setLevel(multiprocessing.SUBDEBUG)
-    # Set the managed variables   
+    # Set the managed variables
     old_mid_x = manager.list()
     old_mid_y = manager.list()
     old_area = manager.list()
@@ -418,15 +424,15 @@ if __name__ == '__main__':
                                           old_mid_x, old_mid_y, old_area))
     # Start the Webcam
     webcam = WebcamVideoStream(src=0).start()
-    webcam_pool = Pool(1, webcam_controller, webcam)
-    
+    webcam_pool = Pool(1, webcam_controller, (webcam, input_frame_q))
+
     # Init the serial
     # xbee = serial.Serial(PORT, BAUD_RATE)
 
     # To compensate for distance, draw middle a little larger
     # TODO move to top?
 
-   # print("Quick XBee test") 
+   # print("Quick XBee test")
    # xbee.write(b'0o0\n')
    # time.sleep(2)
    # xbee.write(b'0b1')
@@ -444,175 +450,169 @@ if __name__ == '__main__':
     depth = [[ FWD, FWD, FWD]]
 
     # Start the tensorflow session
-    while(1):
-                print(input_frame_q.qsize())
-            
-                # Retreive the dicts and break out the useful ones
-                frame_dict = output_dict_q.get()
-                for array_idx in range(0, frame_dict['num_people']): 
-                    if frame_dict['direction'] != None:
-                       # try:
-                       #     if frame_dict['direction'] == LFT:
-                       #         direction[array_idx].append(LFT)
-                       #     elif frame_dict['direction'] == RGT:
-                       #         direction[array_idx].append(RGT)
-                       #     direction[array_idx].pop(0)
-                       #     avg_direction = np.mean(direction[array_idx])
-                       # except IndexError:
-                       #     direction.append([ LFT, LFT, LFT])
-                       #     print('direction ' + direction)
-                       #     if frame_dict['direction'] == LFT:
-                       #         direction[array_idx].append(LFT)
-                       #     elif frame_dict['direction'] == RGT:
-                       #         direction[array_idx].append(RGT)
-                       #     direction[array_idx].pop(0)
-                       #     avg_direction = np.mean(direction[array_idx])
+    while(True):
+        print(input_frame_q.qsize())
 
-                       # if avg_direction > 0.5:
-                       #     print("Person %s: Right" % (array_idx))
-                       # elif avg_direction < 0.5:
-                       #     print("Person %s: Left" % (array_idx))
-                        if frame_dict['direction'] > 0.5:
-                            print("Person %s: Right" % (array_idx))
-                        elif frame_dict['direction'] < 0.5:
-                            print("Person %s: Left" % (array_idx))
+        # Retreive the dicts and break out the useful ones
+        frame_dict = output_dict_q.get()
+        for array_idx in range(0, frame_dict['num_people']):
+            if frame_dict['direction'] != None:
+               # try:
+               #     if frame_dict['direction'] == LFT:
+               #         direction[array_idx].append(LFT)
+               #     elif frame_dict['direction'] == RGT:
+               #         direction[array_idx].append(RGT)
+               #     direction[array_idx].pop(0)
+               #     avg_direction = np.mean(direction[array_idx])
+               # except IndexError:
+               #     direction.append([ LFT, LFT, LFT])
+               #     print('direction ' + direction)
+               #     if frame_dict['direction'] == LFT:
+               #         direction[array_idx].append(LFT)
+               #     elif frame_dict['direction'] == RGT:
+               #         direction[array_idx].append(RGT)
+               #     direction[array_idx].pop(0)
+               #     avg_direction = np.mean(direction[array_idx])
 
-                    if frame_dict['depth'] != None:
-                       # try:
-                       #     if frame_dict['depth'] == FWD:
-                       #         depth[array_idx].append(FWD)
-                       #     elif frame_dict['depth'] == BAK:
-                       #         depth[array_idx].append(BAK)
-                       #     depth[array_idx].pop(0)
-                       #     avg_depth = np.mean(depth[array_idx])
-                       # except IndexError:
-                       #     depth.append([ FWD, FWD, FWD])
-                       #     if frame_dict['depth'] == FWD:
-                       #         depth[array_idx].append(FWD)
-                       #     elif frame_dict['depth'] == BAK:
-                       #         depth[array_idx].append(BAK)
-                       #     depth[array_idx].pop(0)
-                       #     avg_depth = np.mean(depth[array_idx])
+               # if avg_direction > 0.5:
+               #     print("Person %s: Right" % (array_idx))
+               # elif avg_direction < 0.5:
+               #     print("Person %s: Left" % (array_idx))
+                if frame_dict['direction'] > 0.5:
+                    print("Person %s: Right" % (array_idx))
+                elif frame_dict['direction'] < 0.5:
+                    print("Person %s: Left" % (array_idx))
 
-                       # if avg_depth > 0.5:
-                       #     print("Person %s: Backward" % (array_idx))
-                       # elif avg_depth < 0.5:
-                       #     print("Person %s: Forward" % (array_idx))
-                        if frame_dict['depth'] > 0.5:
-                            print("Person %s: Backward" % (array_idx))
-                        elif frame_dict['depth'] < 0.5:
-                            print("Person %s: Forward" % (array_idx))
+            if frame_dict['depth'] != None:
+               # try:
+               #     if frame_dict['depth'] == FWD:
+               #         depth[array_idx].append(FWD)
+               #     elif frame_dict['depth'] == BAK:
+               #         depth[array_idx].append(BAK)
+               #     depth[array_idx].pop(0)
+               #     avg_depth = np.mean(depth[array_idx])
+               # except IndexError:
+               #     depth.append([ FWD, FWD, FWD])
+               #     if frame_dict['depth'] == FWD:
+               #         depth[array_idx].append(FWD)
+               #     elif frame_dict['depth'] == BAK:
+               #         depth[array_idx].append(BAK)
+               #     depth[array_idx].pop(0)
+               #     avg_depth = np.mean(depth[array_idx])
 
-                # Use the bit to change whether or not the light should turn on
-                if frame_dict['person_in_reg1'] is True:
-                    current_lights['light1'] = True
-                else:
-                    current_lights['light1'] = False
+               # if avg_depth > 0.5:
+               #     print("Person %s: Backward" % (array_idx))
+               # elif avg_depth < 0.5:
+               #     print("Person %s: Forward" % (array_idx))
+                if frame_dict['depth'] > 0.5:
+                    print("Person %s: Backward" % (array_idx))
+                elif frame_dict['depth'] < 0.5:
+                    print("Person %s: Forward" % (array_idx))
 
-                if frame_dict['person_in_reg2'] is True:
-                    current_lights['light2'] = True
-                else:
-                    current_lights['light2'] = False
-
-                if frame_dict['person_in_reg3'] is True:
-                    current_lights['light3'] = True
-                else:
-                    current_lights['light3'] = False
-
-                if current_lights['light1'] == True:
-                    # Send the write command only if they're not on
-                    if old_lights['light1'] == False:
-                        print("light 1 on")
-                        # xbee.write(b'1o0')
-                        old_lights['light1'] = True
-                elif current_lights['light1'] == False:
-                    # Send the write command only if they're on to turn them off
-                    if old_lights['light1'] == True:
-                        print("light 1 off")
-                        # xbee.write(b'1f0')
-                        old_lights['light1'] = False
-
-                if current_lights['light2'] == True:
-                    if old_lights['light2'] == False:
-                        print("light 2 on")
-                        # xbee.write(b'2o0')
-                        old_lights['light2'] = True
-                elif current_lights['light2'] == False:
-                    if old_lights['light2'] == True:
-                        print("light 2 off")
-                        # xbee.write(b'2f0')
-                        old_lights['light2'] = False
-
-                if current_lights['light3'] == True:
-                    if old_lights['light3'] == False:
-                        print("light 3 on")
-                        # xbee.write(b'3o0')
-                        old_lights['light3'] = True
-                elif current_lights['light3'] == False:
-                    if old_lights['light3'] == True:
-                        print("light 3 off")
-                        # xbee.write(b'3f0')
-                        old_lights['light3'] = False
-
-                if frame_dict['tv_recog'] is True:
-                    if light_changed_tv == False:
-                        # xbee.write(b'0b1')
-                        time.sleep(0.1)
-                        print("Changing Lights cause TV")
-
-                    tv_under_recog_frames = 0
-                    light_changed_tv = True
-                elif frame_dict['tv_under_recog'] is True:
-                    tv_under_recog_frames += 1
-
-                if (tv_under_recog_frames > TV_RECOG_THRESHOLD and frame_dict['tv_under_recog'] is True) \
-                    or (frame_dict['tv_under_recog'] is False and frame_dict['tv_recog'] is False):
-                    
-                    if light_changed_tv == True:
-                        # xbee.write(b'0b4')
-                        time.sleep(0.1)
-                        light_changed_tv = False
-                        print("Changing Lights cause no TV")
-
-                if frame_dict['book_recog'] is True:
-                    if light_changed_book == False:
-                        # xbee.write(b'0c1')
-                        time.sleep(0.1)
-                        # xbee.write(b'0w5')
-                        print("Changing Lights cause book")
-
-                    book_under_recog_frames = 0
-                    light_changed_book = True
-                elif frame_dict['book_under_recog'] is True:
-                    book_under_recog_frames += 1
-
-                if (book_under_recog_frames > BOOK_RECOG_THRESHOLD and frame_dict['book_under_recog'] is True) \
-                    or (frame_dict['book_under_recog'] is False and frame_dict['book_recog'] is False):
-                   
-                    if light_changed_book == True:
-                        print("Changing Lights cause no book")
-                        # xbee.write(b'0c4')
-                        time.sleep(0.1)
-                        # xbee.write(b'0w4')
-                        light_changed_book = False
-
-                if delay_counter == TIME_OUT:
-                    # xbee.write(b'0f0')
-                    delay_counter = 0
-                    current_lights = { 'light1': False, 'light2': False, 'light3': False}
-                elif frame_dict['person_in_frame'] is False:
-                    delay_counter += 1
-
-                img = output_frame_q.get()
-                cv2.imshow("img", img)
+            # Use the bit to change whether or not the light should turn on
+            if frame_dict['person_in_reg1'] is True:
+                current_lights['light1'] = True
             else:
-           #     skip_count += 1
-           # elif skip_count == 3:
-           #     skip_count = 0 
-                cv2.imshow("img", img)
+                current_lights['light1'] = False
+
+            if frame_dict['person_in_reg2'] is True:
+                current_lights['light2'] = True
+            else:
+                current_lights['light2'] = False
+
+            if frame_dict['person_in_reg3'] is True:
+                current_lights['light3'] = True
+            else:
+                current_lights['light3'] = False
+
+            if current_lights['light1'] == True:
+                # Send the write command only if they're not on
+                if old_lights['light1'] == False:
+                    print("light 1 on")
+                    # xbee.write(b'1o0')
+                    old_lights['light1'] = True
+            elif current_lights['light1'] == False:
+                # Send the write command only if they're on to turn them off
+                if old_lights['light1'] == True:
+                    print("light 1 off")
+                    # xbee.write(b'1f0')
+                    old_lights['light1'] = False
+
+            if current_lights['light2'] == True:
+                if old_lights['light2'] == False:
+                    print("light 2 on")
+                    # xbee.write(b'2o0')
+                    old_lights['light2'] = True
+            elif current_lights['light2'] == False:
+                if old_lights['light2'] == True:
+                    print("light 2 off")
+                    # xbee.write(b'2f0')
+                    old_lights['light2'] = False
+
+            if current_lights['light3'] == True:
+                if old_lights['light3'] == False:
+                    print("light 3 on")
+                    # xbee.write(b'3o0')
+                    old_lights['light3'] = True
+            elif current_lights['light3'] == False:
+                if old_lights['light3'] == True:
+                    print("light 3 off")
+                    # xbee.write(b'3f0')
+                    old_lights['light3'] = False
+
+            if frame_dict['tv_recog'] is True:
+                if light_changed_tv == False:
+                    # xbee.write(b'0b1')
+                    time.sleep(0.1)
+                    print("Changing Lights cause TV")
+
+                tv_under_recog_frames = 0
+                light_changed_tv = True
+            elif frame_dict['tv_under_recog'] is True:
+                tv_under_recog_frames += 1
+
+            if (tv_under_recog_frames > TV_RECOG_THRESHOLD and frame_dict['tv_under_recog'] is True) \
+                or (frame_dict['tv_under_recog'] is False and frame_dict['tv_recog'] is False):
+
+                if light_changed_tv == True:
+                    # xbee.write(b'0b4')
+                    time.sleep(0.1)
+                    light_changed_tv = False
+                    print("Changing Lights cause no TV")
+
+            if frame_dict['book_recog'] is True:
+                if light_changed_book == False:
+                    # xbee.write(b'0c1')
+                    time.sleep(0.1)
+                    # xbee.write(b'0w5')
+                    print("Changing Lights cause book")
+
+                book_under_recog_frames = 0
+                light_changed_book = True
+            elif frame_dict['book_under_recog'] is True:
+                book_under_recog_frames += 1
+
+            if (book_under_recog_frames > BOOK_RECOG_THRESHOLD and frame_dict['book_under_recog'] is True) \
+                or (frame_dict['book_under_recog'] is False and frame_dict['book_recog'] is False):
+
+                if light_changed_book == True:
+                    print("Changing Lights cause no book")
+                    # xbee.write(b'0c4')
+                    time.sleep(0.1)
+                    # xbee.write(b'0w4')
+                    light_changed_book = False
+
+            if delay_counter == TIME_OUT:
+                # xbee.write(b'0f0')
+                delay_counter = 0
+                current_lights = { 'light1': False, 'light2': False, 'light3': False}
+            elif frame_dict['person_in_frame'] is False:
+                delay_counter += 1
+
+            img = output_frame_q.get()
+            cv2.imshow("img", img)
         else:
-            print("Check if the camera is connected to the system!")
-            break
+            cv2.imshow("img", img)
 
         k = cv2.waitKey(60) & 0xFF
         if k == 27:
