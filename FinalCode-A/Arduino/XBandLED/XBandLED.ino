@@ -169,7 +169,7 @@ void loop() {
     Serial.print(data[1]);
   }
 
-  if(data[0] == 0x30 or data[0] == 0x32){
+  if(data[0] == 0x30 or data[0] == 0x33){
     switch(data[2]){
       case '0':
         if(data[1] == 'o'){           /* on */
