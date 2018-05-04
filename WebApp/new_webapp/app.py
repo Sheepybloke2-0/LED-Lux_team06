@@ -72,23 +72,17 @@ def brightness():
         data = int(request.form['value'])
 
         if data == 0:
-            print("writing 0")
-            ser.write("0b0")
+            ser.write(b'0b0')
         elif (data == 1):
-            print("writing 1")
-            ser.write("0b1")
+            ser.write(b'0b1')
         elif (data == 2):
-            print("writing 2")
-            ser.write("0b2")
+            ser.write(b'0b2')
         elif (data == 3):
-            print("writing 3")
-            ser.write("0b3")
+            ser.write(b'0b3')
         elif (data == 4):
-            print("writing 4")
-            ser.write("0b4")
+            ser.write(b'0b4')
         elif (data == 5):
-            print("writing 5")
-            ser.write("0b5")
+            ser.write(b'0b5')
     return '', 204
 
 # master
@@ -99,17 +93,17 @@ def warm():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("0w0")
+            ser.write(b'0w0')
         elif (data == 1):
-            ser.write("0w1")
+            ser.write(b'0w1')
         elif (data == 2):
-            ser.write("0w2")
+            ser.write(b'0w2')
         elif (data == 3):
-            ser.write("0w3")
+            ser.write(b'0w3')
         elif (data == 4):
-            ser.write("0w4")
+            ser.write(b'0w4')
         elif (data == 5):
-            ser.write("0w5")
+            ser.write(b'0w5')
     return '', 204
 
 @app.route('/cool',  methods=['POST'], endpoint='cool')
@@ -119,17 +113,17 @@ def cool():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("0c0")
+            ser.write(b'0c0')
         elif (data == 1):
-            ser.write("0c1")
+            ser.write(b'0c1')
         elif (data == 2):
-            ser.write("0c2")
+            ser.write(b'0c2')
         elif (data == 3):
-            ser.write("0c3")
+            ser.write(b'0c3')
         elif (data == 4):
-            ser.write("0c4")
+            ser.write(b'0c4')
         elif (data == 5):
-            ser.write("0c5")
+            ser.write(b'0c5')
     return '', 204
 
 # L1
@@ -140,17 +134,17 @@ def brightness1():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("1b0")
+            ser.write(b'1b0')
         elif (data == 1):
-            ser.write("1b1")
+            ser.write(b'1b1')
         elif (data == 2):
-            ser.write("1b2")
+            ser.write(b'1b2')
         elif (data == 3):
-            ser.write("1b3")
+            ser.write(b'1b3')
         elif (data == 4):
-            ser.write("1b4")
+            ser.write(b'1b4')
         elif (data == 5):
-            ser.write("1b5")
+            ser.write(b'1b5')
     return '', 204
 
 @app.route('/warm1',  methods=['POST'], endpoint='warm1')
@@ -160,17 +154,17 @@ def warm1():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("1w0")
+            ser.write(b'1w0')
         elif (data == 1):
-            ser.write("1w1")
+            ser.write(b'1w1')
         elif (data == 2):
-            ser.write("1w2")
+            ser.write(b'1w2')
         elif (data == 3):
-            ser.write("1w3")
+            ser.write(b'1w3')
         elif (data == 4):
-            ser.write("1w4")
+            ser.write(b'1w4')
         elif (data == 5):
-            ser.write("1w5")
+            ser.write(b'1w5')
     return '', 204
 
 @app.route('/cool1', methods=['POST'], endpoint='cool1')
@@ -180,17 +174,17 @@ def cool1():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("1c0")
+            ser.write(b'1c0')
         elif (data == 1):
-            ser.write("1c1")
+            ser.write(b'1c1')
         elif (data == 2):
-            ser.write("1c2")
+            ser.write(b'1c2')
         elif (data == 3):
-            ser.write("1c3")
+            ser.write(b'1c3')
         elif (data == 4):
-            ser.write("1c4")
+            ser.write(b'1c4')
         elif (data == 5):
-            ser.write("1c5")
+            ser.write(b'1c5')
     return '', 204
 
 # L2
@@ -201,17 +195,17 @@ def brightness2():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("2b0")
+            ser.write(b'2b0')
         elif (data == 1):
-            ser.write("2b1")
+            ser.write(b'2b1')
         elif (data == 2):
-            ser.write("2b2")
+            ser.write(b'2b2')
         elif (data == 3):
-            ser.write("2b3")
+            ser.write(b'2b3')
         elif (data == 4):
-            ser.write("2b4")
+            ser.write(b'2b4')
         elif (data == 5):
-            ser.write("2b5")
+            ser.write(b'2b5')
     return '', 204
 
 @app.route('/warm2', methods=['POST'], endpoint='warm2')
@@ -221,17 +215,17 @@ def warm2():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("2w0")
+            ser.write(b'2w0')
         elif (data == 1):
-            ser.write("2w1")
+            ser.write(b'2w1')
         elif (data == 2):
-            ser.write("2w2")
+            ser.write(b'2w2')
         elif (data == 3):
-            ser.write("2w3")
+            ser.write(b'2w3')
         elif (data == 4):
-            ser.write("2w4")
+            ser.write(b'2w4')
         elif (data == 5):
-            ser.write("2w5")
+            ser.write(b'2w5')
     return '', 204
 
 @app.route('/cool2', methods=['POST'], endpoint='cool2')
@@ -241,17 +235,17 @@ def cool2():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("2c0")
+            ser.write(b'2c0')
         elif (data == 1):
-            ser.write("2c1")
+            ser.write(b'2c1')
         elif (data == 2):
-            ser.write("2c2")
+            ser.write(b'2c2')
         elif (data == 3):
-            ser.write("2c3")
+            ser.write(b'2c3')
         elif (data == 4):
-            ser.write("2c4")
+            ser.write(b'2c4')
         elif (data == 5):
-            ser.write("2c5")
+            ser.write(b'2c5')
     return '', 204
 
 # L3
@@ -262,17 +256,17 @@ def brightness3():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("3b0")
+            ser.write(b'3b0')
         elif (data == 1):
-            ser.write("3b1")
+            ser.write(b'3b1')
         elif (data == 2):
-            ser.write("3b2")
+            ser.write(b'3b2')
         elif (data == 3):
-            ser.write("3b3")
+            ser.write(b'3b3')
         elif (data == 4):
-            ser.write("3b4")
+            ser.write(b'3b4')
         elif (data == 5):
-            ser.write("3b5")
+            ser.write(b'3b5')
     return '', 204
 
 @app.route('/warm3', methods=['POST'], endpoint='warm3')
@@ -282,17 +276,17 @@ def warm3():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("3w0")
+            ser.write(b'3w0')
         elif (data == 1):
-            ser.write("3w1")
+            ser.write(b'3w1')
         elif (data == 2):
-            ser.write("3w2")
+            ser.write(b'3w2')
         elif (data == 3):
-            ser.write("3w3")
+            ser.write(b'3w3')
         elif (data == 4):
-            ser.write("3w4")
+            ser.write(b'3w4')
         elif (data == 5):
-            ser.write("3w5")
+            ser.write(b'3w5')
     return '', 204
 
 @app.route('/cool3', methods=['POST'], endpoint='cool3')
@@ -302,17 +296,17 @@ def cool3():
         data = int(request.form['value'])
 
         if (data == 0):
-            ser.write("3c0")
+            ser.write(b'3c0')
         elif (data == 1):
-            ser.write("3c1")
+            ser.write(b'3c1')
         elif (data == 2):
-            ser.write("3c2")
+            ser.write(b'3c2')
         elif (data == 3):
-            ser.write("3c3")
+            ser.write(b'3c3')
         elif (data == 4):
-            ser.write("3c4")
+            ser.write(b'3c4')
         elif (data == 5):
-            ser.write("3c5")
+            ser.write(b'3c5')
     return '', 204
 
 #Starter and shutdown functions
