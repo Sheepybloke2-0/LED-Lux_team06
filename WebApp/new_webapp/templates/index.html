@@ -12,16 +12,23 @@
       var plz = {value: $('#brightness-level-all').val()}
       $.post("brightness", plz, function(plz){
         console.log(plz)
-      }); //, 'text'
-      // location.href = "brightness"
+      });
     };
 
     function sliderUpdate2(warm) {
       document.querySelector('#warm-level-all').value = warm;
+      var plz = {value: $('#warm-level-all').val()}
+      $.post("warm", plz, function(plz){
+        console.log(plz)
+      });
     };
 
     function sliderUpdate3(cool) {
       document.querySelector('#cool-level-all').value = cool;
+      var plz = {value: $('#cool-level-all').val()}
+      $.post("cool", plz, function(plz){
+        console.log(plz)
+      });
     };
   </script>
 </head>
@@ -43,19 +50,19 @@
       </form>
     </div>
     <div class="slide-container">
-      <form>
+      <form name="warm" method="POST">
         <p>
           {{ form.warm.label}}
-          {{ form.warm(min=0, max=5, oninput="sliderUpdate2(value)", class="slider", href='/warm/') }}
+          {{ form.warm(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
           <output for="warm" id="warm-level-all">{{ form.warm.data }}</output>
         </p>
       </form>
     </div>
     <div class="slide-container">
-      <form>
+      <form name="cool" method="POST">
         <p>
           {{ form.cool.label}}
-          {{ form.cool(min=0, max=5, oninput="sliderUpdate3(value)", class="slider", href='/cool/') }}
+          {{ form.cool(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}
           <output for="cool" id="cool-level-all">{{ form.cool.data }}</output>
         </p>
       </form>

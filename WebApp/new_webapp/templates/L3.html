@@ -5,17 +5,30 @@
   <style type="text/css">
     {%include "static/main.css"%}
   </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
     function sliderUpdate1(brightness) {
       document.querySelector('#brightness-level-all').value = brightness
+      var plz = {value: $('#brightness-level-all').val()}
+      $.post("brightness3", plz, function(plz){
+        console.log(plz)
+      });
     }
 
     function sliderUpdate2(warm) {
-      document.querySelector('#warm-level-all').value = warm
-    }
+      document.querySelector('#warm-level-all').value = warm;
+      var plz = {value: $('#warm-level-all').val()}
+      $.post("warm3", plz, function(plz){
+        console.log(plz)
+      });
+    };
 
     function sliderUpdate3(cool) {
-      document.querySelector('#cool-level-all').value = cool
+      document.querySelector('#cool-level-all').value = cool;
+      var plz = {value: $('#cool-level-all').val()}
+      $.post("cool3", plz, function(plz){
+        console.log(plz)
+      });
     }
   </script>
 </head>
@@ -28,7 +41,7 @@
   </div>
   <div class="control-container">
     <div class="slide-container" >
-      <form class="slide-container" href="/brightness3/">
+      <form name="brightness" method="POST">
         <p>
           {{ form.brightness.label}}
           {{ form.brightness(min=0, max=5, oninput="sliderUpdate1(value)", class="slider") }}
@@ -37,7 +50,7 @@
       </form>
     </div>
     <div class="slide-container" >
-      <form class="slide-container" href="/warm3/">
+      <form name="warm" method="POST">
         <p>
           {{ form.warm.label}}
           {{ form.warm(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
@@ -46,7 +59,7 @@
       </form>
     </div>
     <div class="slide-container" >
-      <form class="slide-container" href="/cool3/">
+      <form name="cool" method="POST">
         <p>
           {{ form.cool.label}}
           {{ form.cool(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}

@@ -5,17 +5,30 @@
   <style type="text/css">
     {%include "static/main.css"%}
   </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script>
-    function sliderUpdate1(brightness) {
-      document.querySelector('#brightness-level-all').value = brightness
+    function sliderUpdate1(brightness1) {
+      document.querySelector('#brightness-level-one').value = brightness1
+      var plz = {value: $('#brightness-level-one').val()}
+      $.post("brightness1", plz, function(plz){
+        console.log(plz)
+      });
     }
 
-    function sliderUpdate2(warm) {
-      document.querySelector('#warm-level-all').value = warm
-    }
+    function sliderUpdate2(warm1) {
+      document.querySelector('#warm-level-one').value = warm1;
+      var plz = {value: $('#warm-level-one').val()}
+      $.post("warm1", plz, function(plz){
+        console.log(plz)
+      });
+    };
 
-    function sliderUpdate3(cool) {
-      document.querySelector('#cool-level-all').value = cool
+    function sliderUpdate3(cool1) {
+      document.querySelector('#cool-level-one').value = cool1;
+      var plz = {value: $('#cool-level-one').val()}
+      $.post("cool1", plz, function(plz){
+        console.log(plz)
+      });
     }
   </script>
 </head>
@@ -28,29 +41,29 @@
   </div>
   <div class="control-container">
     <div class="slide-container" >
-      <form class="slide-container" href="/brightness1/">
+      <form name="brightness1" method="POST">
         <p>
-          {{ form.brightness.label}}
-          {{ form.brightness(min=0, max=5, oninput="sliderUpdate1(value)", class="slider") }}
-         <output for="brightness" id="brightness-level-all">{{ form.brightness.data }}</output>
+          {{ form.brightness1.label}}
+          {{ form.brightness1(min=0, max=5, oninput="sliderUpdate1(value)", class="slider") }}
+         <output for="brightness1" id="brightness-level-one">{{ form.brightness1.data }}</output>
         </p>
       </form>
     </div>
     <div class="slide-container" >
-      <form class="slide-container" href="/warm1/">
+      <form name="warm1" method="POST">
         <p>
-          {{ form.warm.label}}
-          {{ form.warm(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
-          <output for="warm" id="warm-level-all">{{ form.warm.data }}</output>
+          {{ form.warm1.label}}
+          {{ form.warm1(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
+          <output for="warm1" id="warm-level-one">{{ form.warm1.data }}</output>
         </p>
       </form>
     </div>
     <div class="slide-container" >
-      <form class="slide-container" href="/cool1/">
+      <form name="cool1" method="POST">
         <p>
-          {{ form.cool.label}}
-          {{ form.cool(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}
-          <output for="cool" id="cool-level-all">{{ form.cool.data }}</output>
+          {{ form.cool1.label}}
+          {{ form.cool1(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}
+          <output for="cool1" id="cool-level-one">{{ form.cool1.data }}</output>
         </p>
       </form>
     </div>

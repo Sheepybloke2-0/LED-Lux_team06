@@ -168,8 +168,8 @@ void loop() {
     Serial.readBytesUntil('\n', data, 3); // "0b1" for example
     Serial.print(data[1]);
   }
-  
-  if(data[0] == 0x30 or data[0] == 0x31){
+
+  if(data[0] == 0x30 or data[0] == 0x32){
     switch(data[2]){
       case '0':
         if(data[1] == 'o'){           /* on */
@@ -179,6 +179,16 @@ void loop() {
         else if (data[1] == 'f'){     /* off */
           I2CWRITE6BYTES(ADDRESS, INTENSITY_RGB, 0X000, 0X000, 0X000);
         }
+        else if(data[1] == 'b'){
+          I2CWRITE2BYTES(ADDRESS, DIMMINGLEVEL, 0x000);
+        }
+        else if (data[1] == 'c'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_RED, 0x000);
+        }
+        else if (data[1] == 'w'){
+          I2CWRITE2BYTES(ADDRESS, INTENSITY_GREEN, 0x000);
+        }
+        break;
         break;
       case '1':
         if(data[1] == 'b'){
