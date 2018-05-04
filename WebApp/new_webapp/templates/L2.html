@@ -44,7 +44,7 @@
       <form name="brightness2" method="POST">
         <p>
           {{ form.brightness2.label}}
-          {{ form.brightness2(min=0, max=5, oninput="sliderUpdate(value)", class="slider") }}
+          {{ form.brightness2(min=0, max=5, oninput="sliderUpdate1(value)", class="slider") }}
          <output for="brightness" id="brightness-level-two">{{ form.brightness2.data }}</output>
         </p>
       </form>
@@ -53,7 +53,7 @@
       <form name="warm2" method="POST">
         <p>
           {{ form.warm2.label}}
-          {{ form.warm2(min=0, max=5, oninput="sliderUpdate(value)", class="slider") }}
+          {{ form.warm2(min=0, max=5, oninput="sliderUpdate2(value)", class="slider") }}
           <output for="warm2" id="warm-level-two">{{ form.warm2.data }}</output>
         </p>
       </form>
@@ -62,7 +62,7 @@
       <form name="cool2" method="POST">
         <p>
           {{ form.cool2.label}}
-          {{ form.cool(min=0, max=5, oninput="sliderUpdate(value)", class="slider") }}
+          {{ form.cool(min=0, max=5, oninput="sliderUpdate3(value)", class="slider") }}
           <output for="cool2" id="cool-level-two">{{ form.cool2.data }}</output>
         </p>
       </form>
