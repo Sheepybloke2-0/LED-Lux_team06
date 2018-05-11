@@ -200,3 +200,15 @@ console (`ALT+SHIFT+s`), which allows you to send out serial signals to the othe
 connected XBee radios. You can also do a range test, analyze the spectrum sent,
 and recover a broke XBee radio.
 ## Using the LED Driver
+The LED driver is an Arduino shield connected to the Arduino via an I2C interface.
+Genarally, there are three functions used when working with the driver: `I2CWRITE2BYTES`,
+`I2CWRITE6BYTES`, and `I2CREAD`. The functions are generally structured as so:
+`write_function(ADDRESS, OFFSET, (DATA))`, with the amount of data being sent equal
+to the number of bytes. The read function generally is `var = read_function(ADDRESS, READ_VALUE)`
+To write to all the different channels at once, use the `I2CWRITE6BYTES` to send six different
+bytes to the `INTENSITY_RGB` registers, one for each of the three channels. For
+this project, two of the channels were used: the Red channel and the Green channel.
+The red was used to change the cool LEDs, while the green channel was used to change
+the warm. Those offsets are `INTENSITY_RED` and `INTENSITY_GREEN`. To change
+a single channel, use `I2I2CWRITE2BYTES`, which cna also be used to change the
+brightness, offset `DIMMINGLEVEL`. The intesities range from 0x000 to 0xFFF.
